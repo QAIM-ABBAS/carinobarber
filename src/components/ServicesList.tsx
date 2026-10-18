@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { bookLabel, currency, defaultActiveService, services } from '../data/content'
 import { ArrowStart } from './icons'
 
@@ -16,8 +17,8 @@ export default function ServicesList() {
         const isActive = s.id === active
         return (
           <li key={s.id} className="service" style={{ ['--i' as string]: i }}>
-            <a
-              href="#book"
+            <Link
+              to={`/book?service=${s.id}`}
               className="service__row"
               data-active={isActive}
               onMouseEnter={() => setActive(s.id)}
@@ -38,7 +39,7 @@ export default function ServicesList() {
                 {`${s.price} ${currency}`}
                 {isActive ? ` — ${bookLabel}` : ''}
               </span>
-            </a>
+            </Link>
           </li>
         )
       })}

@@ -24,11 +24,11 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { label: 'درباره ما', href: '#about' },
-  { label: 'خدمات', href: '#services' },
-  { label: 'گالری', href: '#gallery' },
-  { label: 'تماس با ما', href: '#contact' },
-  { label: 'رزرو نوبت', href: '#book' },
+  { label: 'درباره ما', href: '/#about' },
+  { label: 'خدمات', href: '/#services' },
+  { label: 'گالری', href: '/#gallery' },
+  { label: 'تماس با ما', href: '/#contact' },
+  { label: 'رزرو نوبت', href: '/book' },
 ]
 
 export const socials = [

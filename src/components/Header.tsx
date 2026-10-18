@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { brand, navItems, socials } from '../data/content'
 import { CloseIcon, InstagramIcon, MenuIcon, ScissorsMark, TikTokIcon } from './icons'
 
@@ -23,6 +24,7 @@ function Socials({ className }: { className?: string }) {
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
 
   useEffect(() => {
     if (!open) return
@@ -34,17 +36,21 @@ export default function Header() {
   return (
     <header className="hero__header">
       <div className="hero__bar">
-        <a href="#top" className="logo" aria-label={brand.name}>
+        <Link to="/" className="logo" aria-label={brand.name}>
           <ScissorsMark />
-        </a>
+        </Link>
 
         <nav className="hero__nav" aria-label="ناوبری اصلی">
           <ul>
             {navItems.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="nav-link">
+                <Link
+                  to={item.href}
+                  className="nav-link"
+                  aria-current={pathname === item.href ? 'page' : undefined}
+                >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -68,9 +74,9 @@ export default function Header() {
         <ul>
           {navItems.map((item) => (
             <li key={item.href}>
-              <a href={item.href} onClick={() => setOpen(false)}>
+              <Link to={item.href} onClick={() => setOpen(false)}>
                 {item.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
