@@ -1,0 +1,262 @@
+"""Admin HTTP routes. Every route except the login needs a bearer token."""
+
+from __future__ import annotations
+
+from datetime import date as Date
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Query, Request, Response, status
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_admin
+from app.core.errors import AppError
+from app.core.security import build_admin_credentials, create_access_token, verify_admin_login
+from app.core.timeutil import get_now
+from app.db.session import get_db
+from app.models.booking import BookingStatus
+from app.schemas.admin import (
+    AdminBookingItem,
+    AdminBookingList,
+    AdminBookingUpdate,
+    AdminLogin,
+    ClosedDateCreate,
+    ClosedDateOut,
+    ServiceAdminOut,
+    ServiceCreate,
+    ServiceUpdate,
+    ShopSettingsOut,
+    ShopSettingsUpdate,
+    StatsSummary,
+    TokenOut,
+)
+from app.schemas.common import ERROR_RESPONSES
+from app.services import admin as admin_service
+from app.services.admin import BookingFilters
+from app.services.availability import get_shop_settings
+
+admin_router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    responses={401: ERROR_RESPONSES[401]},
+)
+
+
+@admin_router.post(
+    "/login",
+    response_model=TokenOut,
+    summary="ورود مدیر",
+    responses={401: {"model": None, "description": "اطلاعات ورود نادرست"}},
+)
+def login(payload: AdminLogin, request: Request) -> TokenOut:
+    """Exchange the admin credentials for an access token."""
+    credentials = getattr(request.app.state, "admin_credentials", None)
+    if credentials is None:
+        credentials = build_admin_credentials()
+
+    if not verify_admin_login(credentials, payload.username, payload.password):
+        raise AppError(
+            code="invalid_credentials",
+            message="نام کاربری یا رمز عبور نادرست است.",
+            status_code=401,
+        )
+
+    token, expires_in = create_access_token(credentials.username)
+    return TokenOut(access_token=token, token_type="bearer", expires_in=expires_in)
+
+
+@admin_router.get("/services", response_model=list[ServiceAdminOut], summary="همهٔ خدمات")
+def admin_list_services(
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> list[ServiceAdminOut]:
+    """Return every service, including the inactive ones."""
+    return [ServiceAdminOut.model_validate(service) for service in admin_service.list_services(db)]
+
+
+@admin_router.post(
+    "/services",
+    response_model=ServiceAdminOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="افزودن خدمت",
+    responses={409: ERROR_RESPONSES[409]},
+)
+def admin_create_service(
+    payload: ServiceCreate,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ServiceAdminOut:
+    """Create a new service."""
+    return ServiceAdminOut.model_validate(admin_service.create_service(db, payload))
+
+
+@admin_router.patch(
+    "/services/{service_id}",
+    response_model=ServiceAdminOut,
+    summary="ویرایش خدمت",
+    responses={404: ERROR_RESPONSES[404]},
+)
+def admin_update_service(
+    service_id: int,
+    payload: ServiceUpdate,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ServiceAdminOut:
+    """Apply a partial update on a service."""
+    return ServiceAdminOut.model_validate(admin_service.update_service(db, service_id, payload))
+
+
+@admin_router.delete(
+    "/services/{service_id}",
+    response_model=ServiceAdminOut,
+    summary="حذف خدمت",
+    responses={404: ERROR_RESPONSES[404]},
+)
+def admin_delete_service(
+    service_id: int,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ServiceAdminOut:
+    """Deactivate a service (soft delete)."""
+    return ServiceAdminOut.model_validate(admin_service.deactivate_service(db, service_id))
+
+
+@admin_router.get(
+    "/bookings",
+    response_model=AdminBookingList,
+    summary="فهرست نوبت‌ها",
+)
+def admin_list_bookings(
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+    date: Date | None = Query(default=None, description="یک روز مشخص"),
+    date_from: Date | None = Query(default=None, description="از تاریخ"),
+    date_to: Date | None = Query(default=None, description="تا تاریخ"),
+    status_filter: BookingStatus | None = Query(
+        default=None, alias="status", description="وضعیت نوبت"
+    ),
+    q: str | None = Query(default=None, max_length=100, description="جست‌وجوی نام، موبایل یا کد"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> AdminBookingList:
+    """Return a filtered and paginated list of bookings."""
+    filters = BookingFilters(
+        date=date,
+        date_from=date_from,
+        date_to=date_to,
+        status=status_filter.value if status_filter is not None else None,
+        q=q,
+    )
+    bookings, total = admin_service.list_bookings(db, filters, page, page_size)
+    return AdminBookingList(
+        items=[
+            AdminBookingItem.model_validate(admin_service.to_booking_item(booking))
+            for booking in bookings
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@admin_router.patch(
+    "/bookings/{booking_id}",
+    response_model=AdminBookingItem,
+    summary="ویرایش نوبت",
+    responses={404: ERROR_RESPONSES[404], 409: ERROR_RESPONSES[409]},
+)
+def admin_update_booking(
+    booking_id: int,
+    payload: AdminBookingUpdate,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> AdminBookingItem:
+    """Change the status and/or the admin note of a booking."""
+    booking = admin_service.update_booking(db, booking_id, payload)
+    return AdminBookingItem.model_validate(admin_service.to_booking_item(booking))
+
+
+@admin_router.get("/settings", response_model=ShopSettingsOut, summary="تنظیمات باشگاه")
+def admin_get_settings(
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ShopSettingsOut:
+    """Return the shop settings."""
+    return ShopSettingsOut.model_validate(get_shop_settings(db))
+
+
+@admin_router.put(
+    "/settings",
+    response_model=ShopSettingsOut,
+    summary="ویرایش تنظیمات باشگاه",
+    responses={422: ERROR_RESPONSES[422]},
+)
+def admin_update_settings(
+    payload: ShopSettingsUpdate,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ShopSettingsOut:
+    """Update the shop settings."""
+    settings = admin_service.update_shop_settings(db, payload)
+    return ShopSettingsOut.model_validate(settings)
+
+
+@admin_router.get(
+    "/closed-dates",
+    response_model=list[ClosedDateOut],
+    summary="فهرست تعطیلات",
+)
+def admin_list_closed_dates(
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> list[ClosedDateOut]:
+    """Return every holiday."""
+    return [
+        ClosedDateOut.model_validate(closed_date)
+        for closed_date in admin_service.list_closed_dates(db)
+    ]
+
+
+@admin_router.post(
+    "/closed-dates",
+    response_model=ClosedDateOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="افزودن تعطیلی",
+    responses={409: ERROR_RESPONSES[409]},
+)
+def admin_create_closed_date(
+    payload: ClosedDateCreate,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ClosedDateOut:
+    """Add a holiday."""
+    return ClosedDateOut.model_validate(admin_service.create_closed_date(db, payload))
+
+
+@admin_router.delete(
+    "/closed-dates/{closed_date_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="حذف تعطیلی",
+    responses={404: ERROR_RESPONSES[404]},
+)
+def admin_delete_closed_date(
+    closed_date_id: int,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> Response:
+    """Remove a holiday."""
+    admin_service.delete_closed_date(db, closed_date_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@admin_router.get(
+    "/stats/summary",
+    response_model=StatsSummary,
+    summary="آمار داشبورد",
+)
+def admin_stats_summary(
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+    now: datetime = Depends(get_now),
+) -> StatsSummary:
+    """Return the numbers of the dashboard."""
+    return admin_service.get_stats_summary(db, now)
