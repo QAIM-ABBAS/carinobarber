@@ -11,6 +11,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+REPO_ROOT = BACKEND_DIR.parent
 
 DEFAULT_SECRET_KEY = "change-me-to-a-long-random-string"
 DEFAULT_ADMIN_PASSWORD = "change-me-now"
@@ -22,7 +23,9 @@ class Settings(BaseSettings):
     """Runtime configuration. Every value can be overridden through the environment."""
 
     model_config = SettingsConfigDict(
-        env_file=BACKEND_DIR / ".env",
+        # The repository root holds the shared configuration, the backend folder may
+        # override it locally. The last file wins.
+        env_file=(REPO_ROOT / ".env", BACKEND_DIR / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
