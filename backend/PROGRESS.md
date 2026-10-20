@@ -246,7 +246,7 @@ Test results:
 - `ruff check .` → all checks passed. `ruff format --check .` → 51 files already formatted.
 - `grep` for `TODO|FIXME|XXX|placeholder|NotImplementedError` → no matches.
 
-## Structural change — monorepo layout
+## Structural change — monorepo layout & deployment
 
 The project became a monorepo and the whole stack is started from the **repository root**:
 
@@ -255,40 +255,55 @@ The project became a monorepo and the whole stack is started from the **reposito
 ├── frontend/          # React + Vite (was the repository root)
 ├── backend/           # FastAPI (unchanged)
 ├── docker-compose.yml # db + api + frontend  (moved from backend/)
+├── docker-compose.override.example.yml
 └── .env.example       # the configuration of the whole stack
 ```
 
+The deployment follows the pattern of the reference project: **three containers on one compose
+network, no reverse proxy in the repository** (the nginx configuration belongs to the server).
+
+| Service | Image | In the network | Published on the host |
+| --- | --- | --- | --- |
+| `db` | postgres:16-alpine | `db:5432` | `127.0.0.1:5433` (host only) |
+| `api` | `./backend` | `api:8000` | `127.0.0.1:8080` (host only) |
+| `frontend` | `./frontend` (vite dev server) | `frontend:8081` | `0.0.0.0:8081` |
+
 What changed:
 
-- `docker-compose.yml` moved to the root and now builds **three** services: `db` (postgres:16),
-  `api` (`build: ./backend`) and `frontend` (`build: ./frontend`). The api service got a health
-  check (a Python one-liner, the image has no curl) and the frontend depends on it.
-- `frontend/Dockerfile` — multi stage: `node:22-alpine` builds the app, `nginx:1.27-alpine` serves
-  it. `frontend/nginx.conf` forwards `/api` to `http://api:8000` and falls back to `index.html` for
-  the client side routes, so the browser and the API share one origin and no CORS is needed.
+- The compose file lives in the root and builds **three** services. The api has a health check (a
+  Python one-liner, the slim image has no curl) and the frontend depends on it.
+- The frontend container runs the **vite dev server** on port 8081 (the container's
+  `EXPOSE 8081`) and proxies `/api` to `http://api:8000` (`API_PROXY_TARGET`, resolved by Docker
+  DNS inside the network). The browser only ever calls the relative `/api` path, so the app and
+  the API share one origin and no CORS is needed — the nginx configuration of the server stays
+  outside the repository.
+- The source folder is mounted into the frontend container (hot reload) and a named volume keeps the
+  image's Linux `node_modules` from being shadowed by the Windows one.
+- The db and the api are bound to `127.0.0.1` — they are **not** reachable from outside the
+  machine. Only the frontend is published.
+- `docker-compose.override.example.yml` documents how to move a mapping when Windows reserves the
+  port (the `!override` trick replaces the ports list instead of appending to it).
 - **One `.env` in the repository root** configures the stack (docker compose, the backend and the
   vite dev server). `backend/.env` overrides single values for a local run and wins: the settings
   read `env_file=(<root>/.env, <backend>/.env)` and pydantic-settings applies the files in order
-  (the last one wins). The vite config uses `envDir: '..'` and derives the proxy target from
-  `API_PORT` when `API_PROXY_TARGET` is empty.
+  (the last one wins). The vite config uses `envDir: '..'` and reads the proxy target from
+  `process.env` (the container) or from the `.env` (the host).
+- `@types/node` was added to the frontend so the vite config can read `process.env`.
 - `.dockerignore` for both build contexts (the `.venv` and `node_modules` stay out of the build).
-- The ports of the stack are configurable: `API_PORT=8080`, `FRONTEND_PORT=8081` (port 8000 is
-  reserved by Windows on this machine).
 
 Verification after the change:
 
-- `docker compose build` → both images build (`gentlemans-club-api`, `gentlemans-club-frontend`).
-- `docker compose up -d` → db, api and frontend are all **healthy**.
-- `http://localhost:8081/` → the app, `http://localhost:8081/book` → the SPA fallback, a missing
-  asset → 404.
-- `http://localhost:8081/api/v1/services` → the 6 services, `/api/v1/health` → `{"status":"ok"}`,
-  `/docs` and `/openapi.json` → the OpenAPI UI.
-- A booking through nginx → 201 with the Persian SMS in the api log, a second one → 409
-  `slot_taken`, the admin login → 200 `bearer`, the admin list and the statistics → 200.
+- `docker compose build` → both images build, `docker compose up -d` → db, api and frontend are up
+  and healthy.
+- `http://localhost:8081/` → the app, `/book` → the client side route, `/api/v1/services` → the 6
+  services (through the proxy of the frontend container), `/api/v1/health` → `{"status":"ok"}`.
+- A booking through the frontend container → 201 with the Persian SMS in the api log, a second one
+  → 409 `slot_taken`, the admin login → 200 `bearer`, the admin list → 200.
 - The browser on `http://localhost:8081` → the days and the slots come from the API, a booking
-  through the form shows the tracking code, the services page and the home price list show the
-  prices of the API.
-- The dev server (`cd frontend && npm run dev`) → the proxy reaches the API on `API_PORT`.
+  through the form shows the tracking code.
+- The api is only reachable on the loopback interface (`http://127.0.0.1:8080/health` → 200) and
+  from the compose network (`wget http://api:8000/health` inside the frontend container → 200); a
+  request to the host's external IP on port 8080 is refused.
 - `pytest -q` → 148 passed, `ruff check .` → all checks passed, `npm run typecheck` and
   `npm run build` → clean.
 
@@ -458,8 +473,9 @@ Verified in the browser (Vite dev server on port 5199 → backend on port 8080):
   single values for a local run and wins (pydantic-settings applies the env files in order, the
   last one wins). The root file keeps the container URL (`db:5432`), the local file the host URL
   (`localhost:5433`).
-- The frontend is served by nginx in the same compose stack and forwards `/api` to the api service,
-  so the production setup needs no CORS at all (only the vite dev server on port 5173 does).
+- The frontend is served by the vite dev server inside the compose stack and proxies `/api` to the
+  api service, so the production setup needs no CORS at all (only a vite dev server on another
+  port would).
 
 ## How to run
 
@@ -485,7 +501,7 @@ Docker (the whole stack, from the repository root):
 
 ```bash
 cp .env.example .env               # set SECRET_KEY and ADMIN_PASSWORD
-docker compose up --build          # app on http://localhost:8081, docs on http://localhost:8080/docs
+docker compose up --build          # app on http://localhost:8081, api on 127.0.0.1:8080
 ```
 
 ## Definition of done — status

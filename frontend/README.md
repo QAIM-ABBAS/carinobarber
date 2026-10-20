@@ -18,11 +18,14 @@ it through `src/lib/api.ts`.
 
 | | |
 | --- | --- |
-| Dev proxy | `/api` → `http://localhost:$API_PORT` (override with `API_PROXY_TARGET`) |
+| Dev proxy | `/api` → `API_PROXY_TARGET` (in compose: `http://api:8000`, resolved by Docker DNS) |
 | Direct calls | set `VITE_API_URL` (e.g. `http://localhost:8080`) to bypass the proxy |
 | Services | `GET /api/v1/services` — the service list (the static data is the fallback) |
 | Availability | `GET /api/v1/availability` — the days and the free slots |
 | Booking | `POST /api/v1/bookings` — the tracking code is shown on the confirmation screen |
+
+The browser only ever calls the relative `/api` path, so the app and the API share one origin and
+no CORS is needed.
 
 ### Configuration
 
@@ -42,10 +45,13 @@ the static data and shows a retry button on the booking page.
 
 ## Docker
 
-`Dockerfile` builds the app and serves it with nginx, which also forwards `/api` to the backend —
-so the browser and the API share one origin and no CORS is needed:
+The `frontend` service of `docker-compose.yml` runs the vite dev server inside the container and
+publishes it on `http://localhost:8081`:
 
 ```bash
 cd ..
-docker compose up --build      # the frontend on http://localhost:8081
+docker compose up --build
 ```
+
+The source folder is mounted into the container, so a change is picked up immediately; a named
+volume keeps the image's Linux `node_modules` from being shadowed by the Windows one.

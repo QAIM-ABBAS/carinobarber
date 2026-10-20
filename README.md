@@ -11,7 +11,7 @@ FastAPI backend.
 └── .env.example       # the configuration of the whole stack
 ```
 
-## Quick start with Docker
+## Quick start
 
 ```bash
 cp .env.example .env
@@ -19,20 +19,41 @@ cp .env.example .env
 docker compose up --build
 ```
 
-| Service | URL | Notes |
-| --- | --- | --- |
-| Frontend (nginx) | <http://localhost:8081> | serves the app and proxies `/api` to the backend |
-| API | <http://localhost:8080> | `/docs` shows the OpenAPI UI |
-| PostgreSQL | `localhost:5433` | published so the API can also run outside docker |
+Three containers, one network:
 
-The ports come from `API_PORT` and `FRONTEND_PORT` in `.env` (port 8000 is reserved by Windows on
-some machines). The container entry point applies the migrations and seeds the default data.
+| Service | Image | Reachable at | Published on the host |
+| --- | --- | --- | --- |
+| `db` | postgres:16-alpine | `db:5432` | `127.0.0.1:5433` (host only) |
+| `api` | `./backend` | `api:8000` | `127.0.0.1:8080` (host only) |
+| `frontend` | `./frontend` (vite dev server) | `frontend:5173` | **`0.0.0.0:8081`** |
+
+- The browser only talks to the frontend: `http://localhost:8081`
+- The frontend server proxies `/api` to `http://api:8000` over the compose network, so the app
+  and the API share one origin (no CORS, the cookies would work too)
+- The api container runs `alembic upgrade head` and seeds the default data on the first start
+- The database and the API are bound to the loopback interface — they are **not** reachable from
+  outside the machine
+
+Your own reverse proxy (nginx) sits in front of the frontend:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8081;
+}
+location /api/ {
+    proxy_pass http://127.0.0.1:8080;
+}
+```
 
 ```bash
 docker compose logs -f api     # follow the logs
 docker compose down            # stop everything
 docker compose down -v         # stop and delete the database volume
 ```
+
+If a host port is reserved by Windows (Hyper-V/WinNAT excludes ranges like 7981-8080 on some
+machines), copy `docker-compose.override.example.yml` to `docker-compose.override.yml` and move the
+mapping there.
 
 ## Development
 
@@ -43,15 +64,14 @@ python -m venv .venv && .venv/Scripts/activate      # Windows
 pip install -r requirements-dev.txt
 docker compose up -d db                             # from the repository root
 alembic upgrade head
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8080
 
-# frontend
+# frontend (the vite dev server proxies /api to the API)
 cd ../frontend
 npm install
 npm run dev          # http://localhost:5173
 ```
 
-The vite dev server forwards `/api` to the API (see `API_PROXY_TARGET` / `API_PORT` in `.env`).
 Details: [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md)
 
 ## Configuration
@@ -62,10 +82,10 @@ file.
 
 | Variable | Used by | Description |
 | --- | --- | --- |
-| `API_PORT` | compose, vite | Host port of the API (`8000` by default) |
-| `FRONTEND_PORT` | compose | Host port of the nginx frontend (`8081` by default) |
+| `FRONTEND_PORT` | compose | Host port of the frontend (`8081` by default) |
+| `API_PORT` | compose | Host port of the API (`8080` by default, host only) |
+| `API_PROXY_TARGET` | vite | Target of the dev proxy — in compose it is `http://api:8000` |
 | `VITE_API_URL` | vite | Base URL of the API — empty means "same origin" |
-| `API_PROXY_TARGET` | vite | Target of the dev proxy — empty means `http://localhost:$API_PORT` |
 | `APP_ENV` | backend | `production` enables the strict secret validation |
 | `DATABASE_URL` | backend | SQLAlchemy URL (`db:5432` in compose, `localhost:5433` from the host) |
 | `SECRET_KEY` | backend | JWT signing key — at least 32 characters in production |

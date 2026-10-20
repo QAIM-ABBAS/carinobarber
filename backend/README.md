@@ -42,18 +42,23 @@ docker compose up --build
 
 The migrations are applied automatically by the container entry point.
 
-- API: <http://localhost:8080> (the port comes from `API_PORT` in `.env`)
-- Docs: <http://localhost:8080/docs>
 - Frontend: <http://localhost:8081> (the port comes from `FRONTEND_PORT` in `.env`)
-- PostgreSQL is published on **localhost:5433** (5432 is often taken by a local installation)
-- If a port is already used on your machine (or blocked by Windows), change `API_PORT` /
-  `FRONTEND_PORT` in `.env` and use that port instead.
+- API: <http://127.0.0.1:8080> — bound to the loopback interface, so it is not reachable from
+  outside the machine (the port comes from `API_PORT`)
+- Docs: <http://127.0.0.1:8080/docs>
+- PostgreSQL: `127.0.0.1:5433` (host only, 5432 is often taken by a local installation)
+
+The frontend container runs the vite dev server and proxies `/api` to `http://api:8000` over the
+compose network, so the browser and the API share one origin.
 
 ```bash
 docker compose logs -f api     # follow the logs
 docker compose down            # stop everything
 docker compose down -v         # stop and delete the database volume
 ```
+
+If a host port is reserved by Windows, copy `docker-compose.override.example.yml` to
+`docker-compose.override.yml` and move the mapping there.
 
 ## Local setup without Docker
 
