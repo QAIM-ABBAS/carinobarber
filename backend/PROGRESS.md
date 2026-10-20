@@ -246,6 +246,52 @@ Test results:
 - `ruff check .` → all checks passed. `ruff format --check .` → 51 files already formatted.
 - `grep` for `TODO|FIXME|XXX|placeholder|NotImplementedError` → no matches.
 
+## Structural change — monorepo layout
+
+The project became a monorepo and the whole stack is started from the **repository root**:
+
+```
+.
+├── frontend/          # React + Vite (was the repository root)
+├── backend/           # FastAPI (unchanged)
+├── docker-compose.yml # db + api + frontend  (moved from backend/)
+└── .env.example       # the configuration of the whole stack
+```
+
+What changed:
+
+- `docker-compose.yml` moved to the root and now builds **three** services: `db` (postgres:16),
+  `api` (`build: ./backend`) and `frontend` (`build: ./frontend`). The api service got a health
+  check (a Python one-liner, the image has no curl) and the frontend depends on it.
+- `frontend/Dockerfile` — multi stage: `node:22-alpine` builds the app, `nginx:1.27-alpine` serves
+  it. `frontend/nginx.conf` forwards `/api` to `http://api:8000` and falls back to `index.html` for
+  the client side routes, so the browser and the API share one origin and no CORS is needed.
+- **One `.env` in the repository root** configures the stack (docker compose, the backend and the
+  vite dev server). `backend/.env` overrides single values for a local run and wins: the settings
+  read `env_file=(<root>/.env, <backend>/.env)` and pydantic-settings applies the files in order
+  (the last one wins). The vite config uses `envDir: '..'` and derives the proxy target from
+  `API_PORT` when `API_PROXY_TARGET` is empty.
+- `.dockerignore` for both build contexts (the `.venv` and `node_modules` stay out of the build).
+- The ports of the stack are configurable: `API_PORT=8080`, `FRONTEND_PORT=8081` (port 8000 is
+  reserved by Windows on this machine).
+
+Verification after the change:
+
+- `docker compose build` → both images build (`gentlemans-club-api`, `gentlemans-club-frontend`).
+- `docker compose up -d` → db, api and frontend are all **healthy**.
+- `http://localhost:8081/` → the app, `http://localhost:8081/book` → the SPA fallback, a missing
+  asset → 404.
+- `http://localhost:8081/api/v1/services` → the 6 services, `/api/v1/health` → `{"status":"ok"}`,
+  `/docs` and `/openapi.json` → the OpenAPI UI.
+- A booking through nginx → 201 with the Persian SMS in the api log, a second one → 409
+  `slot_taken`, the admin login → 200 `bearer`, the admin list and the statistics → 200.
+- The browser on `http://localhost:8081` → the days and the slots come from the API, a booking
+  through the form shows the tracking code, the services page and the home price list show the
+  prices of the API.
+- The dev server (`cd frontend && npm run dev`) → the proxy reaches the API on `API_PORT`.
+- `pytest -q` → 148 passed, `ruff check .` → all checks passed, `npm run typecheck` and
+  `npm run build` → clean.
+
 ## Final verification (clean checkout, `docker compose down -v` + `docker compose up --build -d`)
 
 | Check | Result |
@@ -408,6 +454,12 @@ Verified in the browser (Vite dev server on port 5199 → backend on port 8080):
   `.env` therefore uses `API_PORT=8080`). Inside the container the API always listens on 8000.
 - The compose database publishes the host port **5433** for the same reason (a native PostgreSQL 18
   service owns 5432 on the development machine).
+- The whole stack is configured by the `.env` of the **repository root**; `backend/.env` overrides
+  single values for a local run and wins (pydantic-settings applies the env files in order, the
+  last one wins). The root file keeps the container URL (`db:5432`), the local file the host URL
+  (`localhost:5433`).
+- The frontend is served by nginx in the same compose stack and forwards `/api` to the api service,
+  so the production setup needs no CORS at all (only the vite dev server on port 5173 does).
 
 ## How to run
 
@@ -422,17 +474,18 @@ ruff check .
 Local API (PostgreSQL from compose):
 
 ```bash
+cd ..                             # the repository root
 docker compose up -d db            # PostgreSQL 16 on localhost:5433
-cp .env.example .env               # set DATABASE_URL=postgresql+psycopg://gc:gc@localhost:5433/gentlemans_club
+cd backend
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
-Docker (everything):
+Docker (the whole stack, from the repository root):
 
 ```bash
-cp .env.example .env
-docker compose up --build          # docs at http://localhost:8000/docs
+cp .env.example .env               # set SECRET_KEY and ADMIN_PASSWORD
+docker compose up --build          # app on http://localhost:8081, docs on http://localhost:8080/docs
 ```
 
 ## Definition of done — status
@@ -441,7 +494,7 @@ docker compose up --build          # docs at http://localhost:8000/docs
 | --- | --- |
 | `pytest -q` green | done (148 passed) |
 | `ruff check .` clean | done |
-| `docker compose up --build` from a clean checkout | done (migrations applied automatically) |
+| `docker compose up --build` from a clean checkout | done (migrations applied automatically, db + api + frontend healthy) |
 | Every endpoint of the contract exists and matches the JSON shapes | done |
 | Unified error format on every failure | done |
 | No TODO / FIXME / placeholder code | done |

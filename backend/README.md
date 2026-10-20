@@ -31,21 +31,23 @@ FastAPI backend for the "Gentleman's Club" barbershop website (باشگاه جن
 
 ## Quick start with Docker
 
+The compose file lives in the repository root and starts PostgreSQL, the API and the frontend:
+
 ```bash
-cd backend
+cd ..                       # the repository root
 cp .env.example .env
 # change SECRET_KEY and ADMIN_PASSWORD in .env
 docker compose up --build
 ```
 
-That starts PostgreSQL 16 and the API. The migrations are applied automatically by the
-container entry point.
+The migrations are applied automatically by the container entry point.
 
-- API: <http://localhost:8000>
-- Docs: <http://localhost:8000/docs>
+- API: <http://localhost:8080> (the port comes from `API_PORT` in `.env`)
+- Docs: <http://localhost:8080/docs>
+- Frontend: <http://localhost:8081> (the port comes from `FRONTEND_PORT` in `.env`)
 - PostgreSQL is published on **localhost:5433** (5432 is often taken by a local installation)
-- If a port is already used on your machine (or blocked by Windows), change `API_PORT` in `.env`
-  (for example `API_PORT=8080`) and use that port instead.
+- If a port is already used on your machine (or blocked by Windows), change `API_PORT` /
+  `FRONTEND_PORT` in `.env` and use that port instead.
 
 ```bash
 docker compose logs -f api     # follow the logs
@@ -59,7 +61,7 @@ docker compose down -v         # stop and delete the database volume
 cd backend
 
 # 1. a PostgreSQL server (the compose one is the easiest)
-docker compose up -d db        # PostgreSQL 16 on localhost:5433
+cd .. && docker compose up -d db && cd backend    # PostgreSQL 16 on localhost:5433
 
 # 2. the virtual environment
 python -m venv .venv
@@ -68,8 +70,9 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 
 # 3. the configuration
-cp .env.example .env
-# DATABASE_URL=postgresql+psycopg://gc:gc@localhost:5433/gentlemans_club
+# The .env of the repository root configures everything. A local backend/.env may
+# override single values (it wins over the root file):
+#   DATABASE_URL=postgresql+psycopg://gc:gc@localhost:5433/gentlemans_club
 
 # 4. the database schema and the server
 alembic upgrade head
@@ -94,6 +97,9 @@ The default services and the shop settings are seeded on startup (`SEED_ON_START
 | `SEED_ON_START` | `true` | Seed the services and the shop settings on startup |
 | `SMS_PROVIDER` | `console` | SMS implementation (`console` is the only one available) |
 | `RATE_LIMIT_BOOKINGS_PER_MINUTE` | `5` | Booking attempts per minute and per IP |
+
+The variables are read from the `.env` of the repository root; a `backend/.env` overrides single
+values for a local run (the last file wins).
 
 With `APP_ENV=production` the app **refuses to start** when `SECRET_KEY` is the default value or
 shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
@@ -226,7 +232,6 @@ pip install -r requirements-dev.txt
 pytest -q
 ruff check .
 ```
-
 The suite runs on an in-memory SQLite database and never touches PostgreSQL. The clock is frozen
 at Monday 2026-10-19 09:30 (Asia/Tehran) so the results are deterministic.
 

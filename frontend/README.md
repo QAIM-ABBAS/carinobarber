@@ -13,27 +13,39 @@ To use a higher-res cut-out, replace both files (same aspect ratio) or update `m
 
 ## Backend
 
-The API lives in [`backend/`](backend/README.md) (FastAPI + PostgreSQL). The frontend talks to it
-through `src/lib/api.ts`.
+The API lives in [`../backend/`](../backend/README.md) (FastAPI + PostgreSQL). The frontend talks to
+it through `src/lib/api.ts`.
 
 | | |
 | --- | --- |
-| Dev proxy | `/api` → `http://localhost:8000` (override with `API_PROXY_TARGET`) |
-| Direct calls | set `VITE_API_URL` (e.g. `http://localhost:8000`) to bypass the proxy |
+| Dev proxy | `/api` → `http://localhost:$API_PORT` (override with `API_PROXY_TARGET`) |
+| Direct calls | set `VITE_API_URL` (e.g. `http://localhost:8080`) to bypass the proxy |
 | Services | `GET /api/v1/services` — the service list (the static data is the fallback) |
 | Availability | `GET /api/v1/availability` — the days and the free slots |
 | Booking | `POST /api/v1/bookings` — the tracking code is shown on the confirmation screen |
 
 ### Configuration
 
-Copy `.env.example` to `.env` in the project root:
+The configuration lives in the `.env` of the **repository root** (next to `docker-compose.yml`),
+because the vite dev server, the backend and docker compose share it. Vite is configured with
+`envDir: '..'` so it picks that file up.
 
 ```
 # empty → the relative path is used and the Vite dev proxy forwards /api
 VITE_API_URL=
-# target of the Vite dev proxy (server side only)
-API_PROXY_TARGET=http://localhost:8000
+# target of the Vite dev proxy (server side only); empty means http://localhost:$API_PORT
+API_PROXY_TARGET=
 ```
 
-Start the backend first (`cd backend && docker compose up --build`), otherwise the frontend falls
-back to the static data and shows a retry button on the booking page.
+Start the backend first (`cd .. && docker compose up --build`), otherwise the frontend falls back to
+the static data and shows a retry button on the booking page.
+
+## Docker
+
+`Dockerfile` builds the app and serves it with nginx, which also forwards `/api` to the backend —
+so the browser and the API share one origin and no CORS is needed:
+
+```bash
+cd ..
+docker compose up --build      # the frontend on http://localhost:8081
+```
