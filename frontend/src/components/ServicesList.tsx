@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { bookLabel, currency, defaultActiveService, services } from '../data/content'
+import { bookLabel, currency, defaultActiveService } from '../data/content'
+import { useServices } from '../lib/useServices'
 import { ArrowStart } from './icons'
 
 /**
@@ -8,6 +9,7 @@ import { ArrowStart } from './icons'
  * (Facial Treatments by default, exactly like the reference). Hover / focus moves it.
  */
 export default function ServicesList() {
+  const { services } = useServices()
   const [active, setActive] = useState(defaultActiveService)
   const reset = () => setActive(defaultActiveService)
 

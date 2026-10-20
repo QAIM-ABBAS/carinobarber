@@ -1,20 +1,35 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import HeroBackground from '../components/HeroBackground'
 import { ArrowStart } from '../components/icons'
-import { currency, manImage, services, type Service } from '../data/content'
+import { currency, manImage, type Service } from '../data/content'
+import { ApiError } from '../lib/api'
 import {
   formatTime,
   getBookableDays,
   getSlots,
   normalizePhone,
   submitBooking,
+  toFaDigits,
   type BookableDay,
 } from '../lib/booking'
+import { useServices } from '../lib/useServices'
 import '../booking.css'
 
 type Errors = Partial<Record<'service' | 'time' | 'name' | 'phone', string>>
+
+/** Errors that mean the availability changed and the days have to be reloaded. */
+const RELOAD_AVAILABILITY = new Set([
+  'slot_taken',
+  'slot_in_past',
+  'date_out_of_range',
+  'day_closed',
+  'invalid_time',
+])
+
+const GENERIC_ERROR = 'ثبت نوبت انجام نشد. لطفاً دوباره تلاش کنید.'
+const DAYS_ERROR = 'دریافت روزهای آزاد ممکن نشد. لطفاً دوباره تلاش کنید.'
 
 function CheckIcon() {
   return (
@@ -61,22 +76,47 @@ function Summary({ service, day, time, className = '' }: SummaryProps) {
 
 export default function BookingPage() {
   const [params] = useSearchParams()
-  const days = useMemo(() => getBookableDays(14), [])
+  const { services } = useServices()
+  const [days, setDays] = useState<BookableDay[]>([])
+  const [daysLoading, setDaysLoading] = useState(true)
+  const [daysError, setDaysError] = useState<string | null>(null)
 
   const initialService = services.find((s) => s.id === params.get('service'))?.id ?? null
   const [serviceId, setServiceId] = useState<string | null>(initialService)
-  const [dayIso, setDayIso] = useState<string>(() => days.find((d) => d.available)?.iso ?? days[0].iso)
+  const [dayIso, setDayIso] = useState<string>('')
   const [time, setTime] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [errors, setErrors] = useState<Errors>({})
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
   const [code, setCode] = useState('')
-  const [failed, setFailed] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const service = services.find((s) => s.id === serviceId)
   const day = days.find((d) => d.iso === dayIso)
   const slots = useMemo(() => (day ? getSlots(day) : []), [day])
+
+  const loadDays = useCallback(async () => {
+    setDaysLoading(true)
+    try {
+      const loaded = await getBookableDays(14)
+      setDays(loaded)
+      setDaysError(null)
+      setDayIso((current) => {
+        if (current && loaded.some((d) => d.iso === current)) return current
+        const first = loaded.find((d) => d.available) ?? loaded[0]
+        return first ? first.iso : ''
+      })
+    } catch (err) {
+      setDaysError(err instanceof ApiError ? err.message : DAYS_ERROR)
+    } finally {
+      setDaysLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadDays()
+  }, [loadDays])
 
   const validate = (): Errors => {
     const e: Errors = {}
@@ -101,7 +141,7 @@ export default function BookingPage() {
     if (Object.keys(e).length) return focusFirst(e)
 
     setStatus('submitting')
-    setFailed(false)
+    setSubmitError(null)
     try {
       const res = await submitBooking({
         serviceId: service!.id,
@@ -110,12 +150,17 @@ export default function BookingPage() {
         name: name.trim(),
         phone: normalizePhone(phone)!,
       })
-      setCode(res.code)
+      setCode(toFaDigits(res.code))
       setStatus('done')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch {
-      setFailed(true)
+    } catch (err) {
+      setSubmitError(err instanceof ApiError ? err.message : GENERIC_ERROR)
       setStatus('idle')
+      // The slot was taken meanwhile — refresh the availability.
+      if (err instanceof ApiError && RELOAD_AVAILABILITY.has(err.code)) {
+        setTime(null)
+        void loadDays()
+      }
     }
   }
 
@@ -125,6 +170,7 @@ export default function BookingPage() {
     setName('')
     setPhone('')
     setErrors({})
+    setSubmitError(null)
     setStatus('idle')
   }
 
@@ -205,34 +251,47 @@ export default function BookingPage() {
               {/* 2 — day */}
               <fieldset className="step">
                 <legend><span className="step__n">۲</span>انتخاب روز</legend>
-                <div className="days">
-                  {days.map((d) => (
-                    <label key={d.iso} className="day">
-                      <input
-                        type="radio"
-                        name="day"
-                        value={d.iso}
-                        disabled={!d.available}
-                        checked={dayIso === d.iso}
-                        onChange={() => {
-                          setDayIso(d.iso)
-                          setTime(null)
-                        }}
-                      />
-                      <span className="day__body">
-                        <span className="day__wd">{d.weekday}</span>
-                        <span className="day__n">{d.day}</span>
-                        <span className="day__m">{d.closed ? 'تعطیل' : !d.available ? 'تکمیل' : d.month}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                {daysLoading ? (
+                  <p className="muted">در حال دریافت روزهای آزاد…</p>
+                ) : daysError ? (
+                  <p className="err err--box" role="alert">
+                    {daysError}{' '}
+                    <button type="button" className="btn btn--ghost" onClick={() => void loadDays()}>
+                      تلاش دوباره
+                    </button>
+                  </p>
+                ) : (
+                  <div className="days">
+                    {days.map((d) => (
+                      <label key={d.iso} className="day">
+                        <input
+                          type="radio"
+                          name="day"
+                          value={d.iso}
+                          disabled={!d.available}
+                          checked={dayIso === d.iso}
+                          onChange={() => {
+                            setDayIso(d.iso)
+                            setTime(null)
+                          }}
+                        />
+                        <span className="day__body">
+                          <span className="day__wd">{d.weekday}</span>
+                          <span className="day__n">{d.day}</span>
+                          <span className="day__m">{d.closed ? 'تعطیل' : !d.available ? 'تکمیل' : d.month}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </fieldset>
 
               {/* 3 — time */}
               <fieldset className="step" id="step-time" tabIndex={-1} aria-describedby={errors.time ? 'err-time' : undefined}>
                 <legend><span className="step__n">۳</span>انتخاب ساعت</legend>
-                {day?.closed ? (
+                {daysLoading ? (
+                  <p className="muted">در حال دریافت ساعت‌های آزاد…</p>
+                ) : day?.closed ? (
                   <p className="muted">این روز باشگاه تعطیل است؛ روز دیگری را انتخاب کنید.</p>
                 ) : (
                   <div className="slots">
@@ -300,7 +359,7 @@ export default function BookingPage() {
 
               <Summary service={service} day={day} time={time} className="summary--inline" />
 
-              {failed && <p className="err err--box" role="alert">ثبت نوبت انجام نشد. لطفاً دوباره تلاش کنید.</p>}
+              {submitError && <p className="err err--box" role="alert">{submitError}</p>}
 
               <button type="submit" className="btn btn--submit" disabled={status === 'submitting'}>
                 {status === 'submitting' ? 'در حال ثبت…' : 'ثبت نوبت'}

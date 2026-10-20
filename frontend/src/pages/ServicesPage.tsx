@@ -2,13 +2,15 @@ import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import HeroBackground from '../components/HeroBackground'
 import { ArrowStart } from '../components/icons'
-import { currency, manImage, services } from '../data/content'
-import { serviceDetails } from '../data/serviceDetails'
+import { currency, manImage } from '../data/content'
+import { useServices } from '../lib/useServices'
 import '../services.css'
 
 const faIndex = (n: number) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
 
 export default function ServicesPage() {
+  const { services, details } = useServices()
+
   return (
     <section className="hero hero--page hero--services" aria-labelledby="services-title">
       <HeroBackground />
@@ -26,7 +28,7 @@ export default function ServicesPage() {
 
         <ul className="sv__list">
           {services.map((s, i) => {
-            const d = serviceDetails[s.id]
+            const d = details[s.id]
             return (
               <li key={s.id} className="sv__item" data-featured={d?.featured || undefined} style={{ ['--i' as string]: i }}>
                 <span className="sv__num" aria-hidden="true">{faIndex(i + 1)}</span>

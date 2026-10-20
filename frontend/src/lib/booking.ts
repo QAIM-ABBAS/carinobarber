@@ -1,7 +1,12 @@
 /**
- * Booking helpers (frontend only).
- * Replace `submitBooking` with a real API call when you add a backend.
+ * Booking helpers.
+ *
+ * The days, the slots and the booking itself now come from the API
+ * (`GET /availability` and `POST /bookings`). The static data in
+ * `data/content.ts` is only used as a fallback while the API is unreachable.
  */
+
+import { createBooking, fetchAvailability, type ApiDay } from './api'
 
 export interface BookingPayload {
   serviceId: string
@@ -15,6 +20,7 @@ export interface BookingPayload {
 
 export interface BookingResult {
   code: string
+  status: string
 }
 
 const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
@@ -36,6 +42,16 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 export const toISODate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
+/** Parses `YYYY-MM-DD` as a *local* date (no UTC shift). */
+export function parseISODate(iso: string): Date {
+  const [year, month, day] = iso.split('-').map(Number)
+  return new Date(year, (month ?? 1) - 1, day ?? 1)
+}
+
+/** `400000` → `۴۰۰٬۰۰۰` */
+export const formatPrice = (value: number) =>
+  toFaDigits(value.toLocaleString('en-US')).replace(/,/g, '٬')
+
 export interface BookableDay {
   iso: string
   date: Date
@@ -46,6 +62,12 @@ export interface BookableDay {
   closed: boolean
   /** false when closed or every slot is taken / past */
   available: boolean
+  slots: Slot[]
+}
+
+export interface Slot {
+  time: string
+  disabled: boolean
 }
 
 const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('fa-IR-u-ca-persian', opts)
@@ -54,66 +76,48 @@ const dayFmt = fmt({ day: 'numeric' })
 const monthFmt = fmt({ month: 'long' })
 const fullFmt = fmt({ weekday: 'long', day: 'numeric', month: 'long' })
 
-/** Days the shop is closed (0 = Sunday … 5 = Friday). */
-const CLOSED_WEEKDAYS = [5]
-
-export function getBookableDays(count = 14, from = new Date()): BookableDay[] {
-  return Array.from({ length: count }, (_, i) => {
-    const date = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i)
-    const day: BookableDay = {
-      iso: toISODate(date),
-      date,
-      weekday: weekdayFmt.format(date),
-      day: dayFmt.format(date),
-      month: monthFmt.format(date),
-      full: fullFmt.format(date),
-      closed: CLOSED_WEEKDAYS.includes(date.getDay()),
-      available: true,
-    }
-    day.available = getSlots(day, from).some((s) => !s.disabled)
-    return day
-  })
-}
-
-export interface Slot {
-  time: string
-  disabled: boolean
-}
-
-const OPEN_HOUR = 10
-const CLOSE_HOUR = 21 // last slot starts at 20:00
-
-/** Cheap deterministic hash so "taken" slots look stable per day (demo data). */
-function hash(s: string) {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
-  return h >>> 0
+function toBookableDay(day: ApiDay): BookableDay {
+  const date = parseISODate(day.date)
+  return {
+    iso: day.date,
+    date,
+    weekday: weekdayFmt.format(date),
+    day: dayFmt.format(date),
+    month: monthFmt.format(date),
+    full: fullFmt.format(date),
+    closed: day.closed,
+    available: day.available,
+    slots: day.slots.map((slot) => ({ time: slot.time, disabled: !slot.available })),
+  }
 }
 
 /**
- * Time slots for a day. Past slots (today) are disabled; some slots are
- * pseudo-randomly "taken" — swap this for real availability from your API.
+ * The days the customer can book.
+ *
+ * The shop decides which day "today" is, so no start date is sent and the
+ * availability always matches the server (including the closing days, the
+ * holidays and the slots that are already taken).
  */
-export function getSlots(day: BookableDay, now = new Date()): Slot[] {
-  const slots: Slot[] = []
-  for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
-    const time = `${pad(h)}:00`
-    const isPast = day.iso === toISODate(now) && h <= now.getHours()
-    const taken = hash(`${day.iso}-${time}`) % 100 < 28
-    slots.push({ time, disabled: day.closed || isPast || taken })
-  }
-  return slots
+export async function getBookableDays(count = 14): Promise<BookableDay[]> {
+  const data = await fetchAvailability(undefined, count)
+  return data.days.map(toBookableDay)
+}
+
+/** The slots of a day (already loaded with the day). */
+export function getSlots(day: BookableDay): Slot[] {
+  return day.slots
 }
 
 export const formatTime = (t: string) => toFaDigits(t)
 
+/** Books a slot. Throws an `ApiError` with the Persian message of the server. */
 export async function submitBooking(payload: BookingPayload): Promise<BookingResult> {
-  // TODO: replace with your API, e.g.
-  // const res = await fetch('/api/bookings', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-  // if (!res.ok) throw new Error('booking failed')
-  // return res.json()
-  void payload
-  await new Promise((r) => setTimeout(r, 900))
-  const code = toFaDigits(String(hash(JSON.stringify(payload)) % 900000 + 100000))
-  return { code }
+  const booking = await createBooking({
+    service_id: payload.serviceId,
+    date: payload.date,
+    time: payload.time,
+    name: payload.name,
+    phone: payload.phone,
+  })
+  return { code: booking.code, status: booking.status }
 }
