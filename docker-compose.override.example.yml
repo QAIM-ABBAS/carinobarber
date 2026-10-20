@@ -1,0 +1,18 @@
+# Optional local overrides, git-ignored (copy to docker-compose.override.yml).
+#
+# The base file publishes the api on 127.0.0.1:8080 and the database on
+# 127.0.0.1:5433. If Windows reserves one of those ports (Hyper-V/WinNAT/WSL
+# exclude ranges like 7981-8080 on some machines), move the mapping to a port
+# that is free — 18000 is outside the dynamic range (1024-15001), so the
+# reservations cannot steal it.
+#
+# Nothing in the stack depends on the host port: the frontend container proxies
+# /api to `api:8000` over the compose network and the api healthcheck runs
+# inside the container. Only host tooling (curl, /docs) sees the new port.
+#
+# `!override` replaces the base file's ports list instead of appending to it.
+#
+# services:
+#   api:
+#     ports: !override
+#       - "127.0.0.1:18000:8000"

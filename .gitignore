@@ -2,3 +2,6 @@
 .env.local
 .env.*.local
 *.log
+
+# Local, git-ignored compose overrides (see docker-compose.override.example.yml)
+docker-compose.override.yml
