@@ -126,12 +126,14 @@ shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `POST` | `/api/v1/admin/login` | Get an access token |
+| `POST` | `/api/v1/admin/login` | Get an access token (5 attempts per minute and per IP) |
 | `GET` | `/api/v1/admin/services` | All services, including the inactive ones |
 | `POST` | `/api/v1/admin/services` | Create a service |
 | `PATCH` | `/api/v1/admin/services/{id}` | Partial update (the slug is immutable) |
 | `DELETE` | `/api/v1/admin/services/{id}` | Soft delete (`is_active=false`) |
 | `GET` | `/api/v1/admin/bookings` | `date`, `date_from`, `date_to`, `status`, `q`, `page`, `page_size` |
+| `POST` | `/api/v1/admin/bookings` | Create a booking by hand (not rate limited, up to 90 days ahead) |
+| `GET` | `/api/v1/admin/bookings/{id}` | A single booking |
 | `PATCH` | `/api/v1/admin/bookings/{id}` | Change `status` and/or `admin_note` |
 | `GET` | `/api/v1/admin/settings` | Shop settings |
 | `PUT` | `/api/v1/admin/settings` | Update the shop settings |
@@ -152,6 +154,9 @@ shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
 - A booking can be cancelled while it is still `pending` or `confirmed` and at least
   `cancel_before_hours` (2 by default) before its start time.
 - Phone numbers are normalized to `09xxxxxxxxx`; `۰۹۱۲…`, `+98912…`, `0098912…` are all accepted.
+- **Admin bookings** (`POST /admin/bookings`) reuse every rule above, but they are not rate
+  limited, they lift the per phone number limit of active bookings and they accept dates up to
+  90 days ahead. A booking created with the status `confirmed` sends the confirmation SMS.
 
 ### Error format
 
@@ -176,7 +181,7 @@ Validation errors use the code `validation_error` and a `details` list of
 | `invalid_phone` | 422 | The phone number could not be normalized |
 | `booking_not_found` | 404 | Unknown code, or the phone number does not match |
 | `cancel_not_allowed` | 409 | The booking can no longer be cancelled |
-| `rate_limited` | 429 | Too many booking attempts from this IP |
+| `rate_limited` | 429 | Too many booking attempts (or login attempts) from this IP |
 | `unauthorized` | 401 | Missing or invalid admin token |
 | `invalid_credentials` | 401 | Wrong admin username or password |
 | `already_exists` | 409 | Duplicate slug or duplicate holiday |
@@ -222,6 +227,11 @@ curl "http://localhost:8000/api/v1/admin/bookings?date=2026-10-21&page_size=20" 
 curl -X PATCH http://localhost:8000/api/v1/admin/bookings/1 \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"status":"confirmed","admin_note":"تماس گرفته شد"}'
+
+# Create a booking by hand (admin)
+curl -X POST http://localhost:8000/api/v1/admin/bookings \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"service_id":"beard","date":"2026-10-21","time":"11:00","name":"علی رضایی","phone":"۰۹۱۲۱۲۳۴۵۶۷","status":"confirmed"}'
 
 # Update the shop settings
 curl -X PUT http://localhost:8000/api/v1/admin/settings \
