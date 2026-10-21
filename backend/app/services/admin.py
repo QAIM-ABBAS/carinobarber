@@ -13,6 +13,7 @@ from app.models.booking import ACTIVE_STATUSES, Booking, BookingStatus
 from app.models.closed_date import ClosedDate
 from app.models.service import Service
 from app.schemas.admin import (
+    AdminBookingCreate,
     AdminBookingServiceOut,
     AdminBookingUpdate,
     ClosedDateCreate,
@@ -22,6 +23,10 @@ from app.schemas.admin import (
     StatsSummary,
 )
 from app.services.availability import get_shop_settings
+from app.services.bookings import create_booking_record
+
+#: How many days ahead the admin may create a booking (the public window is shorter).
+ADMIN_BOOKING_MAX_DAYS_AHEAD = 90
 
 ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     BookingStatus.PENDING.value: {
@@ -159,12 +164,11 @@ def to_booking_item(booking: Booking) -> dict[str, object]:
     }
 
 
-def update_booking(session: Session, booking_id: int, payload: AdminBookingUpdate) -> Booking:
-    """Update the status and/or the admin note of a booking.
+def get_booking(session: Session, booking_id: int) -> Booking:
+    """Return a booking by its numeric id.
 
     Raises:
-        AppError: 404 ``booking_not_found`` when the booking does not exist and
-            409 ``invalid_status_transition`` when the transition is not allowed.
+        AppError: 404 ``booking_not_found`` when the booking does not exist.
     """
     booking = session.get(Booking, booking_id)
     if booking is None:
@@ -173,6 +177,46 @@ def update_booking(session: Session, booking_id: int, payload: AdminBookingUpdat
             message="نوبت مورد نظر یافت نشد.",
             status_code=404,
         )
+    return booking
+
+
+def create_admin_booking(session: Session, payload: AdminBookingCreate, now: datetime) -> Booking:
+    """Create a booking on behalf of the admin (phone booking or walk-in).
+
+    The validation of the public endpoint is reused (active service, day not closed,
+    valid working slot, slot not in the past and one booking per slot). The endpoint
+    is **not** rate limited, it lifts the per phone number limit of active bookings
+    and it accepts dates up to ``ADMIN_BOOKING_MAX_DAYS_AHEAD`` days ahead.
+
+    Raises:
+        AppError: with the documented code for every failed validation.
+    """
+    booking = create_booking_record(
+        session,
+        service_id=payload.service_id,
+        day=payload.date,
+        time=payload.time,
+        name=payload.name,
+        phone=payload.phone,
+        now=now,
+        status=payload.status,
+        max_days_ahead=ADMIN_BOOKING_MAX_DAYS_AHEAD,
+        enforce_phone_cap=False,
+    )
+    if payload.admin_note is not None:
+        booking.admin_note = payload.admin_note
+        session.commit()
+    return booking
+
+
+def update_booking(session: Session, booking_id: int, payload: AdminBookingUpdate) -> Booking:
+    """Update the status and/or the admin note of a booking.
+
+    Raises:
+        AppError: 404 ``booking_not_found`` when the booking does not exist and
+            409 ``invalid_status_transition`` when the transition is not allowed.
+    """
+    booking = get_booking(session, booking_id)
 
     if payload.status is not None:
         allowed = ALLOWED_TRANSITIONS.get(booking.status, set())

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date as Date
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -113,6 +114,29 @@ class AdminBookingList(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class AdminBookingCreate(BaseModel):
+    """Body of a booking the admin creates by hand (phone booking / walk-in)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    service_id: str = Field(min_length=1, max_length=50, description="شناسهٔ عمومی خدمت (slug)")
+    date: Date = Field(description="تاریخ نوبت به فرمت YYYY-MM-DD")
+    time: str = Field(min_length=1, max_length=10, description="ساعت نوبت به فرمت HH:mm")
+    name: str = Field(min_length=2, max_length=100, description="نام و نام خانوادگی")
+    phone: str = Field(max_length=64, description="شماره موبایل")
+    status: Literal["pending", "confirmed"] = Field(
+        default="confirmed", description="وضعیت اولیهٔ نوبت"
+    )
+    admin_note: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
 
 class AdminBookingUpdate(BaseModel):

@@ -5,16 +5,18 @@ from __future__ import annotations
 from datetime import date as Date
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
 from app.core.errors import AppError
+from app.core.rate_limit import rate_limit_login
 from app.core.security import build_admin_credentials, create_access_token, verify_admin_login
 from app.core.timeutil import get_now
 from app.db.session import get_db
 from app.models.booking import BookingStatus
 from app.schemas.admin import (
+    AdminBookingCreate,
     AdminBookingItem,
     AdminBookingList,
     AdminBookingUpdate,
@@ -33,6 +35,7 @@ from app.schemas.common import ERROR_RESPONSES
 from app.services import admin as admin_service
 from app.services.admin import BookingFilters
 from app.services.availability import get_shop_settings
+from app.services.sms import build_booking_created_message, send_sms_safely
 
 admin_router = APIRouter(
     prefix="/admin",
@@ -45,10 +48,20 @@ admin_router = APIRouter(
     "/login",
     response_model=TokenOut,
     summary="ورود مدیر",
-    responses={401: {"model": None, "description": "اطلاعات ورود نادرست"}},
+    responses={
+        401: {"model": None, "description": "اطلاعات ورود نادرست"},
+        429: ERROR_RESPONSES[429],
+    },
 )
-def login(payload: AdminLogin, request: Request) -> TokenOut:
-    """Exchange the admin credentials for an access token."""
+def login(
+    payload: AdminLogin,
+    request: Request,
+    _rate_limit: None = Depends(rate_limit_login),
+) -> TokenOut:
+    """Exchange the admin credentials for an access token.
+
+    The endpoint is rate limited: five attempts per minute and per client IP.
+    """
     credentials = getattr(request.app.state, "admin_credentials", None)
     if credentials is None:
         credentials = build_admin_credentials()
@@ -156,6 +169,56 @@ def admin_list_bookings(
         page=page,
         page_size=page_size,
     )
+
+
+@admin_router.post(
+    "/bookings",
+    response_model=AdminBookingItem,
+    status_code=status.HTTP_201_CREATED,
+    summary="ثبت نوبت دستی",
+    responses={
+        404: ERROR_RESPONSES[404],
+        409: ERROR_RESPONSES[409],
+        422: ERROR_RESPONSES[422],
+    },
+)
+def admin_create_booking(
+    payload: AdminBookingCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    now: datetime = Depends(get_now),
+    _admin: str = Depends(get_current_admin),
+) -> AdminBookingItem:
+    """Create a booking by hand (phone booking or walk-in).
+
+    The endpoint is not rate limited and it lifts the per phone number limit of
+    active bookings, but every other rule of the public booking endpoint still
+    applies. A confirmed booking sends the confirmation SMS, a pending one does not.
+    """
+    booking = admin_service.create_admin_booking(db, payload, now)
+    if payload.status == BookingStatus.CONFIRMED.value:
+        background_tasks.add_task(
+            send_sms_safely,
+            booking.phone,
+            build_booking_created_message(booking.code, booking.date.isoformat(), booking.time),
+        )
+    return AdminBookingItem.model_validate(admin_service.to_booking_item(booking))
+
+
+@admin_router.get(
+    "/bookings/{booking_id}",
+    response_model=AdminBookingItem,
+    summary="نوبت",
+    responses={404: ERROR_RESPONSES[404]},
+)
+def admin_get_booking(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> AdminBookingItem:
+    """Return a single booking."""
+    booking = admin_service.get_booking(db, booking_id)
+    return AdminBookingItem.model_validate(admin_service.to_booking_item(booking))
 
 
 @admin_router.patch(

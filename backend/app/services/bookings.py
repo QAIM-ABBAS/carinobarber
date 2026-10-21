@@ -168,6 +168,57 @@ def create_booking(
     Raises:
         AppError: with the documented code for every failed validation.
     """
+    booking = create_booking_record(
+        session,
+        service_id=service_id,
+        day=day,
+        time=time,
+        name=name,
+        phone=phone,
+        now=now,
+    )
+    return _to_result(booking)
+
+
+def create_booking_record(
+    session: Session,
+    *,
+    service_id: str,
+    day: date,
+    time: str,
+    name: str,
+    phone: str,
+    now: datetime,
+    status: str = BookingStatus.PENDING.value,
+    max_days_ahead: int | None = None,
+    enforce_phone_cap: bool = True,
+) -> Booking:
+    """Insert a booking row and return the ORM record.
+
+    The public booking endpoint and the admin booking endpoint share this function, so
+    both of them run exactly the same validation (active service, day not closed,
+    valid working slot, slot not in the past and one booking per slot).
+
+    Args:
+        session: database session.
+        service_id: slug of the wanted service.
+        day: shop local date of the appointment.
+        time: wanted slot (``HH:00``).
+        name: customer name.
+        phone: customer phone number (any accepted format).
+        now: current moment (shop timezone).
+        status: initial status of the booking (``pending`` or ``confirmed``).
+        max_days_ahead: how many days ahead a booking may be created; ``None`` uses
+            the booking window of the shop settings.
+        enforce_phone_cap: whether the per phone number limit of active bookings
+            applies (the admin endpoint lifts it).
+
+    Returns:
+        The created booking row.
+
+    Raises:
+        AppError: with the documented code for every failed validation.
+    """
     moment = ensure_aware(now).astimezone(get_shop_timezone())
     normalized_phone = _normalize_phone(phone)
     customer_name = name.strip()
@@ -176,7 +227,11 @@ def create_booking(
 
     settings = get_shop_settings(session)
     today = moment.date()
-    window_start, window_end = booking_window_bounds(today, settings.booking_window_days)
+    if max_days_ahead is None:
+        window_start, window_end = booking_window_bounds(today, settings.booking_window_days)
+    else:
+        window_start = today
+        window_end = today + timedelta(days=max_days_ahead)
     if day < window_start or day > window_end:
         raise AppError(
             code="date_out_of_range",
@@ -205,7 +260,7 @@ def create_booking(
             status_code=409,
         )
 
-    if _count_active_bookings(session, normalized_phone, today) >= (
+    if enforce_phone_cap and _count_active_bookings(session, normalized_phone, today) >= (
         settings.max_active_bookings_per_phone
     ):
         raise AppError(
@@ -221,11 +276,11 @@ def create_booking(
         time=time,
         customer_name=customer_name,
         phone=normalized_phone,
-        status=BookingStatus.PENDING.value,
+        status=status,
         price_at_booking=service.price,
     )
     _insert_booking(session, booking)
-    return _to_result(booking)
+    return booking
 
 
 def _find_booking_by_code_and_phone(session: Session, code: str, phone: str) -> Booking | None:

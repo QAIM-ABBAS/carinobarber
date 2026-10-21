@@ -1,4 +1,4 @@
-"""A tiny in-memory rate limiter used to protect the booking endpoint."""
+"""A tiny in-memory rate limiter used to protect the booking and the login endpoints."""
 
 from __future__ import annotations
 
@@ -12,6 +12,9 @@ from app.core.config import Settings, get_settings
 from app.core.errors import AppError
 
 WINDOW_SECONDS = 60
+
+#: How many login attempts a single client IP may make per minute.
+LOGIN_ATTEMPTS_PER_MINUTE = 5
 
 
 class RateLimiter:
@@ -46,6 +49,9 @@ class RateLimiter:
 _limiter: RateLimiter | None = None
 _limiter_lock = threading.Lock()
 
+_login_limiter: RateLimiter | None = None
+_login_limiter_lock = threading.Lock()
+
 
 def get_rate_limiter(settings: Settings | None = None) -> RateLimiter:
     """Return the shared limiter for the configured limit."""
@@ -57,12 +63,24 @@ def get_rate_limiter(settings: Settings | None = None) -> RateLimiter:
         return _limiter
 
 
+def get_login_rate_limiter() -> RateLimiter:
+    """Return the shared limiter of the login endpoint."""
+    global _login_limiter
+    with _login_limiter_lock:
+        if _login_limiter is None:
+            _login_limiter = RateLimiter(limit=LOGIN_ATTEMPTS_PER_MINUTE)
+        return _login_limiter
+
+
 def reset_rate_limiter() -> None:
-    """Clear the recorded hits (used by the test suite)."""
-    global _limiter
+    """Clear the recorded hits of every limiter (used by the test suite)."""
+    global _limiter, _login_limiter
     with _limiter_lock:
         if _limiter is not None:
             _limiter.reset()
+    with _login_limiter_lock:
+        if _login_limiter is not None:
+            _login_limiter.reset()
 
 
 def client_key(request: Request) -> str:
@@ -83,5 +101,22 @@ def rate_limit_bookings(request: Request) -> None:
         raise AppError(
             code="rate_limited",
             message="تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.",
+            status_code=429,
+        )
+
+
+def rate_limit_login(request: Request) -> None:
+    """FastAPI dependency that rejects too many login attempts.
+
+    Every attempt is counted (also the successful ones) so the endpoint cannot be
+    brute forced.
+
+    Raises:
+        AppError: 429 ``rate_limited`` when the client exceeded the limit.
+    """
+    if not get_login_rate_limiter().allow(client_key(request)):
+        raise AppError(
+            code="rate_limited",
+            message="تعداد تلاش‌های ورود بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.",
             status_code=429,
         )
