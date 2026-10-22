@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* The admin panel has its own stylesheet — it must not add utilities to the public CSS. */
+@source not "./admin";
 
 @theme {
   --font-sans: "Vazirmatn Variable", ui-sans-serif, system-ui, "Segoe UI", Tahoma, sans-serif;

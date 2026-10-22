@@ -27,5 +27,13 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // The unit tests of the admin panel (vitest). They never touch the network.
+    test: {
+      environment: 'jsdom',
+      include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+      restoreMocks: true,
+      // The environment is created once per worker (the tests are independent).
+      isolate: false,
+    },
   }
 })
