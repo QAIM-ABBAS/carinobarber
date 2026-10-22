@@ -1,0 +1,3 @@
+# The admin panel is never indexed (it also sends `noindex` while it is open).
+User-agent: *
+Disallow: /admin

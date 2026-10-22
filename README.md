@@ -74,6 +74,41 @@ npm run dev          # http://localhost:5173
 
 Details: [`backend/README.md`](backend/README.md) · [`frontend/README.md`](frontend/README.md)
 
+## پنل مدیریت (Admin panel)
+
+The barbershop has its own admin panel: **`/admin`** (e.g. `http://localhost:8081/admin`).
+It is a separate, lazily loaded bundle of the same SPA — the public pages are not affected by it.
+
+| Page | Path | What it does |
+| --- | --- | --- |
+| ورود | `/admin/login` | Username + password (five attempts per minute and per IP) |
+| داشبورد | `/admin` | Today's bookings, the upcoming bookings and the revenue of the month |
+| نوبت‌ها | `/admin/bookings` | The booking list with the filters, the status changes and the manual bookings |
+| خدمات | `/admin/services` | The service catalog: prices, durations, the order and the active state |
+| تنظیمات | `/admin/settings` | The working hours, the closing weekdays, the limits and the holidays |
+
+**Login** with the account of the `.env` file of the repository root:
+
+```
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me-now
+```
+
+**Changing the password:** edit `ADMIN_PASSWORD` in `.env` and restart the api
+(`docker compose up -d api` or restart uvicorn). The password is hashed with bcrypt on the first
+request of the process — there is no separate user table and no password reset page.
+
+The session lives in `sessionStorage` (it ends when the tab is closed) and the admin routes send
+`<meta name="robots" content="noindex">`. If a reverse proxy (nginx or Caddy) sits in front of the
+frontend, add the header as well:
+
+```
+# nginx
+location /admin { add_header X-Robots-Tag "noindex, nofollow"; ... }
+# Caddy
+header /admin* X-Robots-Tag "noindex, nofollow"
+```
+
 ## Configuration
 
 `.env` in the repository root configures the whole stack (docker compose, the backend and the vite
@@ -100,6 +135,6 @@ file.
 ## Tests
 
 ```bash
-cd backend  && pytest -q && ruff check .    # 148 tests
-cd frontend && npm run typecheck && npm run build
+cd backend  && pytest -q && ruff check .    # 178 tests
+cd frontend && npm run typecheck && npm test && npm run build
 ```

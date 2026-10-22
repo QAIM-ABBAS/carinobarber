@@ -20,9 +20,26 @@ FastAPI backend for the "Gentleman's Club" barbershop website (باشگاه جن
 - Booking creation, lookup and cancellation with a database level guarantee of **one active
   booking per slot**
 - Persian SMS notifications (console provider, ready for a real gateway)
-- Per IP rate limiting on the booking endpoint
-- Admin API: service management, booking management, shop settings, holidays and statistics
+- Per IP rate limiting on the booking endpoint and on the admin login (5 attempts per minute)
+- Admin API: service management, booking management (including manual bookings), shop settings,
+  holidays and statistics
 - One unified error envelope for every failure
+
+## The admin panel
+
+The admin panel of the barbershop is a part of the frontend (`/admin`) and it uses exactly these
+endpoints. The credentials come from the environment of the API:
+
+```
+ADMIN_USERNAME=admin          # the user name of the admin
+ADMIN_PASSWORD=change-me-now  # the plain password (hashed with bcrypt on the first request)
+```
+
+Change the password by editing `ADMIN_PASSWORD` in the `.env` of the repository root and by
+restarting the API — there is no user table and no password reset endpoint. The token lives for
+`ACCESS_TOKEN_EXPIRE_MINUTES` (720 minutes by default).
+
+The endpoints of the panel are listed in [Admin (bearer token)](#admin-bearer-token) below.
 
 ## Requirements
 

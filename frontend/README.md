@@ -6,10 +6,35 @@ React 19 + Vite + TypeScript + Tailwind CSS v4. Persian (fa), RTL, fully respons
     npm run dev      # development
     npm run build    # type-check + production build
     npm run typecheck
+    npm test         # the unit tests of the admin panel (vitest)
 
 Layers (back → front): background (z0) → title (z10) → man PNG (z20) → price list (z30) → header (z40).
 Copy, prices and image paths: `src/data/content.ts`. Man cut-out: `public/images/man.png` (+ `.webp`).
 To use a higher-res cut-out, replace both files (same aspect ratio) or update `manImage` in content.ts.
+
+## Admin panel
+
+`/admin` is a lazily loaded bundle of the same SPA (`src/admin/`). It never touches the public
+pages: every style of the panel is prefixed with `ad-` and lives in `src/admin/admin.css`, and the
+Tailwind scanner ignores the folder (`@source not "./admin";` in `src/index.css`) so the admin
+classes never end up in the public CSS.
+
+```
+src/admin/
+  AdminApp.tsx      the routes, the query cache, the session and the toasts
+  api/              the typed client, the types and the React Query hooks
+  auth/             the session in sessionStorage, the provider and the guard
+  layout/           the shell, the sidebar (column on desktop, drawer on mobile) and the icons
+  components/       the shared buttons, fields, modals, tables and states
+  lib/              the formatting (Persian digits, Jalali dates) and the form rules
+  pages/            the login, the dashboard, the bookings, the services and the settings
+```
+
+The data comes from the admin endpoints of the API (see [`../backend/README.md`](../backend/README.md)):
+`POST /admin/login`, `GET /admin/stats/summary`, `GET|PATCH /admin/bookings`,
+`POST /admin/bookings`, `GET|POST|PATCH|DELETE /admin/services`, `GET|PUT /admin/settings` and
+`GET|POST|DELETE /admin/closed-dates`. The hour list of the manual booking form comes from the
+public `GET /availability`.
 
 ## Backend
 
