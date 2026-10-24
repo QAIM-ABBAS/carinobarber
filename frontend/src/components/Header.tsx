@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { brand, navItems, socials } from '../data/content'
-import { CloseIcon, InstagramIcon, MenuIcon, ScissorsMark, TikTokIcon } from './icons'
+import { CloseIcon, InstagramIcon, MenuIcon, TikTokIcon } from './icons'
 
 const socialIcons = { instagram: InstagramIcon, tiktok: TikTokIcon }
 
@@ -37,7 +37,13 @@ export default function Header() {
     <header className="hero__header">
       <div className="hero__bar">
         <Link to="/" className="logo" aria-label={brand.name}>
-          <ScissorsMark />
+          <img
+            className="logo__img"
+            src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+            alt=""
+            width={48}
+            height={48}
+          />
         </Link>
 
         <nav className="hero__nav" aria-label="ناوبری اصلی">

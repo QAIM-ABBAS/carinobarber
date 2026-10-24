@@ -5,7 +5,7 @@
 
 export const brand = {
   /** Two-line poster title. Line 1 fills the full width, line 2 is the short one. */
-  titleLines: ['باشگاه جنتلمن‌ها', 'مردانه'] as const,
+  titleLines: ['Carino Barber'] as const,
   name: 'باشگاه جنتلمن‌ها',
 }
 

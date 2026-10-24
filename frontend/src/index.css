@@ -47,10 +47,21 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/*
+ * Content width (`--cw`) reclaims 75% of the leftover side gutter, keeping
+ * 25% of it as margin — so `--base` + gutters always add back up to 100vw.
+ * The 20px floor keeps narrow screens from collapsing to the very edge.
+ *   each-side gutter = max(20px, (100vw - --base) / 8)
+ */
+
 /* ───────────────────────── Hero shell (mobile first) ───────────────────────── */
 .hero {
-  --tw: min(calc(100vw - 40px), 640px);
-  --fs: calc(var(--tw) / var(--fit));
+  --base: min(calc(100vw - 40px), 640px);
+  --cw: calc(100vw - 2 * max(20px, (100vw - var(--base)) / 5));
+  --tw: var(--cw);
+  /* Font-size follows --base (not the reclaimed --cw): extra width is absorbed
+     by the scaleX stretch, so type widens but never grows taller. */
+  --fs: calc(var(--base) / var(--fit));
   position: relative;
   isolation: isolate;
   display: flex;
@@ -84,7 +95,7 @@
 .hero__header {
   position: relative;
   z-index: 40;
-  width: min(calc(100% - 40px), 640px);
+  width: var(--cw);
   margin-inline: auto;
 }
 .hero__bar {
@@ -106,6 +117,14 @@
 }
 .logo:hover { transform: rotate(-8deg) scale(1.06); background: #fff; }
 .logo svg { width: 68%; height: 68%; }
+/* Crest artwork (white square PNG) fills the round badge and is clipped to it. */
+.logo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
 
 .hero__nav, .hero__social { display: none; }
 
@@ -162,12 +181,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  width: min(calc(100% - 40px), 640px);
+  width: var(--cw);
   margin-inline: auto;
   padding-bottom: 28px;
 }
 
-/* Layer 10 — title */
+/* Layer 10 — title (behind the man, same as the original Persian title) */
 .hero__title {
   position: relative;
   z-index: 10;
@@ -180,7 +199,26 @@
   letter-spacing: 0; /* never letter-space Persian — it breaks the joins */
   color: var(--color-cream);
 }
+
+/* The English title is left-aligned (LTR) while the rest of the page stays RTL.*/
+.hero__title--ltr {
+  direction: ltr;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.hero__title--ltr .hero__title-line:first-child {
+  align-self: flex-start;
+  width: 100%;
+}
 .hero__title-line { display: block; white-space: nowrap; }
+/* Each line is scaled horizontally (HeroTitle measures --stretch) so the text
+   stretches edge-to-edge instead of ending short: line 1 fills the whole box */
+.hero__title-text {
+  display: inline-block;
+  transform: scaleX(var(--stretch, 1));
+  transform-origin: left center;
+}
 
 /* Layer 20 — the man (transparent PNG) */
 .hero__man {
@@ -245,30 +283,34 @@
 
 /* ───────────────────────── Tablet ───────────────────────── */
 @media (min-width: 640px) and (max-width: 1023.98px) {
-  .hero { --tw: min(calc(100vw - 80px), 700px); }
-  .hero__header, .hero__stage { width: calc(var(--tw) + 0px); }
+  .hero { --base: min(calc(100vw - 80px), 700px); }
+  .hero__header, .hero__stage { width: var(--cw); }
   .hero__list { width: min(100%, 520px); margin-left: auto; }
 }
 
 /* ───────────────────────── Desktop: pixel-matched artboard ───────────────────────── */
 @media (min-width: 1024px) {
   .hero {
-    --tw: calc(var(--u) * 878);
+    --base: calc(var(--u) * 968);
+    --tw: calc(var(--cw) - var(--u) * 90);
+    /* Font-size stays tied to the artboard (878u), NOT to --tw: the extra width
+       is absorbed by the scaleX stretch, so type gets wider but never taller. */
+    --fs: calc(var(--u) * 878 / var(--fit));
     min-height: max(100svh, calc(var(--u) * 743));
   }
 
-  .hero__header { width: calc(var(--u) * 968); }
+  .hero__header { width: var(--cw); }
   .hero__bar {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    height: calc(var(--u) * 51);
+    height: calc(var(--u) * 70);
     margin-inline: calc(var(--u) * 45);
     padding-top: calc(var(--u) * 3);
   }
   .logo { width: calc(var(--u) * 28); height: calc(var(--u) * 28); justify-self: start; }
   .hero__nav { display: block; }
   .hero__nav ul { display: flex; align-items: center; gap: calc(var(--u) * 26); }
-  .nav-link { font-size: calc(var(--u) * 14); }
+  .nav-link { font-size: calc(var(--u) * 17); }
   .hero__social { display: flex; align-items: center; gap: calc(var(--u) * 17); justify-self: end; }
   .hero__social .social-link { width: calc(var(--u) * 17); height: calc(var(--u) * 17); }
   .menu-btn, .mobile-menu { display: none !important; }
@@ -276,7 +318,7 @@
   .hero__stage {
     flex: none;
     margin: auto auto 0;
-    width: calc(var(--u) * 968);
+    width: var(--cw);
     height: calc(var(--u) * 691);
     padding: 0;
     display: block;
@@ -289,6 +331,7 @@
     width: var(--tw);
     padding: 0;
   }
+
 
   .hero__man {
     position: absolute;
@@ -303,15 +346,17 @@
   .hero__list {
     position: absolute;
     right: calc(var(--u) * 50);
-    bottom: calc(var(--u) * 27);
-    width: calc(var(--u) * 311);
+    bottom: calc(var(--u) * 60);
+    /* Stretch left to meet the man (man right edge = 57u + 525u = 582u, plus an
+       18u gap). Rows are `space-between`, so the name/price spread to fill it. */
+    width: calc(var(--cw) - var(--u) * 750);
     margin: 0;
   }
   .service__row {
     min-height: 0;
-    height: calc(var(--u) * 57.6);
+    height: calc(var(--u) * 70);
     border-bottom-width: max(1px, calc(var(--u) * 1));
-    font-size: calc(var(--u) * 19);
+    font-size: calc(var(--u) * 21);
   }
   .service__price { font-size: calc(var(--u) * 17); }
   .service__book {
@@ -329,7 +374,6 @@
   .hero__bg { animation: fade 1.2s ease both; }
   .hero__bar { animation: drop 0.8s var(--ease) 0.1s both; }
   .hero__title-line { animation: rise 1s var(--ease) both; }
-  .hero__title-line:nth-child(2) { animation-delay: 0.12s; }
   .hero__man { animation: rise-man 1.2s var(--ease) 0.2s both; }
   .service { animation: slide-in 0.8s var(--ease) both; animation-delay: calc(0.45s + var(--i, 0) * 0.07s); }
 }
