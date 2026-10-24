@@ -7,15 +7,6 @@
   --cream: var(--color-cream, #f1f2e9);
   --ink: #1b1a15;
 }
-.hero--services .hero__header { width: var(--sv-w); }
-@media (min-width: 1024px) {
-  .hero--services .hero__bar { margin-inline: 0; height: 56px; padding-top: 0; }
-  .hero--services .logo { width: 30px; height: 30px; }
-  .hero--services .nav-link { font-size: 14px; }
-  .hero--services .hero__social .social-link { width: 18px; height: 18px; }
-}
-.hero--services .nav-link[aria-current="page"] { color: #fff; }
-.hero--services .nav-link[aria-current="page"]::after { transform: scaleX(1); }
 
 .sv { position: relative; z-index: 10; width: var(--sv-w); margin-inline: auto; padding: 28px 0 80px; }
 

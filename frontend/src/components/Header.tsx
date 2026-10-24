@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { brand, navItems, socials } from '../data/content'
 import { CloseIcon, InstagramIcon, MenuIcon, TikTokIcon } from './icons'
+import './Header.css'
 
 const socialIcons = { instagram: InstagramIcon, tiktok: TikTokIcon }
 

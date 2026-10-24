@@ -1,0 +1,112 @@
+/* ───────────────────────── Header / nav ─────────────────────────
+   Single source of truth for all navbar styling (shared by every page).
+   The home-page nav is the reference: every page renders these styles. */
+
+.hero__header {
+  position: relative;
+  z-index: 40;
+  width: var(--cw);
+  margin-inline: auto;
+}
+
+.hero__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.13);
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #d6d5d2;
+  color: #1b1d1a;
+  transition: transform 0.35s var(--ease), background-color 0.2s;
+}
+.logo:hover { transform: rotate(-8deg) scale(1.06); background: #fff; }
+.logo svg { width: 68%; height: 68%; }
+/* Crest artwork (white square PNG) fills the round badge and is clipped to it. */
+.logo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+
+.hero__nav, .hero__social { display: none; }
+
+.menu-btn { display: grid; place-items: center; width: 40px; height: 40px; margin-inline-end: -8px; }
+.menu-btn svg { width: 26px; height: 26px; }
+
+.mobile-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  margin-top: 8px;
+  padding: 10px 20px 18px;
+  border-radius: 14px;
+  background: rgb(22 23 20 / 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+  animation: menu-in 0.35s var(--ease) both;
+}
+.mobile-menu[hidden] { display: none; }
+.mobile-menu li a { display: block; padding: 13px 0; font-size: 17px; border-bottom: 1px solid rgb(255 255 255 / 0.08); }
+.mobile-menu__social { display: flex; gap: 14px; padding-top: 16px; }
+.social-link { display: grid; place-items: center; width: 22px; height: 22px; transition: color 0.2s, transform 0.3s var(--ease); }
+.social-link:hover { color: var(--color-brass); transform: translateY(-2px); }
+.social-link svg { width: 100%; height: 100%; }
+.mobile-menu__social .social-link { width: 26px; height: 26px; }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-8px); } }
+
+.nav-link {
+  position: relative;
+  display: inline-block;
+  padding-block: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 1px;
+  height: 1px;
+  background: var(--color-brass);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s var(--ease);
+}
+.nav-link:hover { color: #fff; }
+.nav-link:hover::after { transform: scaleX(1); }
+.nav-link[aria-current="page"] { color: #fff; }
+.nav-link[aria-current="page"]::after { transform: scaleX(1); }
+
+@media (min-width: 1024px) {
+  .hero__bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    height: calc(var(--u) * 70);
+    margin-inline: calc(var(--u) * 45);
+    padding-top: calc(var(--u) * 3);
+  }
+  .logo { width: calc(var(--u) * 28); height: calc(var(--u) * 28); justify-self: start; }
+  .hero__nav { display: block; }
+  .hero__nav ul { display: flex; align-items: center; gap: calc(var(--u) * 26); }
+  .nav-link { font-size: calc(var(--u) * 17); }
+  .hero__social { display: flex; align-items: center; gap: calc(var(--u) * 17); justify-self: end; }
+  .hero__social .social-link { width: calc(var(--u) * 17); height: calc(var(--u) * 17); }
+  .menu-btn, .mobile-menu { display: none !important; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero__bar { animation: drop 0.8s var(--ease) 0.1s both; }
+}
+@keyframes drop { from { opacity: 0; transform: translateY(-12px); } }

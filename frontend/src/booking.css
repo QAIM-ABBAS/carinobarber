@@ -11,17 +11,6 @@
   min-height: 100svh;
 }
 
-/* header lines up with the page content */
-.hero.hero--page .hero__header { width: var(--bk-w); }
-@media (min-width: 1024px) {
-  .hero.hero--page .hero__bar { margin-inline: 0; height: 56px; padding-top: 0; }
-  .hero.hero--page .logo { width: 30px; height: 30px; }
-  .hero.hero--page .nav-link { font-size: 14px; }
-  .hero.hero--page .hero__social .social-link { width: 18px; height: 18px; }
-}
-.nav-link[aria-current="page"] { color: #fff; }
-.nav-link[aria-current="page"]::after { transform: scaleX(1); }
-
 .book { position: relative; z-index: 10; width: var(--bk-w); margin-inline: auto; padding: 28px 0 80px; }
 
 .book__head { margin-bottom: 28px; }
