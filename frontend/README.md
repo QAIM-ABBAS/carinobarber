@@ -32,7 +32,8 @@ src/admin/
 
 The data comes from the admin endpoints of the API (see [`../backend/README.md`](../backend/README.md)):
 `POST /admin/login`, `GET /admin/stats/summary`, `GET|PATCH /admin/bookings`,
-`POST /admin/bookings`, `GET|POST|PATCH|DELETE /admin/services`, `GET|PUT /admin/settings` and
+`POST /admin/bookings`, `GET|POST|PATCH|DELETE /admin/services`,
+`POST|DELETE /admin/services/{id}/images`, `GET|PUT /admin/settings` and
 `GET|POST|DELETE /admin/closed-dates`. The hour list of the manual booking form comes from the
 public `GET /availability`.
 
@@ -45,7 +46,8 @@ it through `src/lib/api.ts`.
 | --- | --- |
 | Dev proxy | `/api` → `API_PROXY_TARGET` (in compose: `http://api:8000`, resolved by Docker DNS) |
 | Direct calls | set `VITE_API_URL` (e.g. `http://localhost:8080`) to bypass the proxy |
-| Services | `GET /api/v1/services` — the service list (the static data is the fallback) |
+| Services | `GET /api/v1/services` — the service list with the image gallery (the static data is the fallback) |
+| Media | `/api/v1/media/services/{filename}` — the uploaded service images (served by the API) |
 | Availability | `GET /api/v1/availability` — the days and the free slots |
 | Booking | `POST /api/v1/bookings` — the tracking code is shown on the confirmation screen |
 

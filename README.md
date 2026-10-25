@@ -84,7 +84,7 @@ It is a separate, lazily loaded bundle of the same SPA — the public pages are 
 | ورود | `/admin/login` | Username + password (five attempts per minute and per IP) |
 | داشبورد | `/admin` | Today's bookings, the upcoming bookings and the revenue of the month |
 | نوبت‌ها | `/admin/bookings` | The booking list with the filters, the status changes and the manual bookings |
-| خدمات | `/admin/services` | The service catalog: prices, durations, the order and the active state |
+| خدمات | `/admin/services` | The service catalog: prices, durations, images, the order and the active state |
 | تنظیمات | `/admin/settings` | The working hours, the closing weekdays, the limits and the holidays |
 
 **Login** with the account of the `.env` file of the repository root:
@@ -129,12 +129,13 @@ file.
 | `CORS_ORIGINS` | backend | Comma separated list of allowed origins |
 | `SHOP_TIMEZONE` | backend | Timezone of the shop (`Asia/Tehran`) |
 | `SEED_ON_START` | backend | Seed the services and the shop settings on startup |
+| `UPLOAD_DIR` | backend | Folder of the uploaded service images (`backend/uploads` by default; compose uses the `uploads` volume) |
 | `SMS_PROVIDER` | backend | SMS implementation (`console` is the only one available) |
 | `RATE_LIMIT_BOOKINGS_PER_MINUTE` | backend | Booking attempts per minute and per IP |
 
 ## Tests
 
 ```bash
-cd backend  && pytest -q && ruff check .    # 178 tests
+cd backend  && pytest -q && ruff check .    # 185 tests
 cd frontend && npm run typecheck && npm test && npm run build
 ```

@@ -14,7 +14,7 @@ FastAPI backend for the "Gentleman's Club" barbershop website (باشگاه جن
 
 ## Features
 
-- Public service catalog (`GET /api/v1/services`)
+- Public service catalog (`GET /api/v1/services`) with a per-service image gallery
 - Day/slot availability with holidays, weekly closing days and the booking window
   (`GET /api/v1/availability`)
 - Booking creation, lookup and cancellation with a database level guarantee of **one active
@@ -117,6 +117,7 @@ The default services and the shop settings are seeded on startup (`SEED_ON_START
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma separated list of allowed origins |
 | `SHOP_TIMEZONE` | `Asia/Tehran` | Timezone used for "today" and for the slot generation |
 | `SEED_ON_START` | `true` | Seed the services and the shop settings on startup |
+| `UPLOAD_DIR` | `backend/uploads` | Folder of the uploaded service images (compose mounts the `uploads` volume at `/app/uploads`) |
 | `SMS_PROVIDER` | `console` | SMS implementation (`console` is the only one available) |
 | `RATE_LIMIT_BOOKINGS_PER_MINUTE` | `5` | Booking attempts per minute and per IP |
 
@@ -134,6 +135,7 @@ shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
 | --- | --- | --- |
 | `GET` | `/health` | Health check (also available at `/api/v1/health`) |
 | `GET` | `/api/v1/services` | Active services ordered by `sort_order` |
+| `GET` | `/api/v1/media/services/{filename}` | An uploaded service image (JPEG, PNG or WebP) |
 | `GET` | `/api/v1/availability?start=YYYY-MM-DD&days=14` | Availability of the days (`days` ≤ 31) |
 | `POST` | `/api/v1/bookings` | Create a booking (rate limited per IP) |
 | `GET` | `/api/v1/bookings/{code}?phone=...` | Look up a booking (the phone must match) |
@@ -148,6 +150,8 @@ shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
 | `POST` | `/api/v1/admin/services` | Create a service |
 | `PATCH` | `/api/v1/admin/services/{id}` | Partial update (the slug is immutable) |
 | `DELETE` | `/api/v1/admin/services/{id}` | Soft delete (`is_active=false`) |
+| `POST` | `/api/v1/admin/services/{id}/images` | Upload one image (`multipart/form-data`, field `file`: JPEG/PNG/WebP, ≤ 5 MB, ≤ 12 images per service) |
+| `DELETE` | `/api/v1/admin/services/{id}/images/{filename}` | Remove one image and delete its file |
 | `GET` | `/api/v1/admin/bookings` | `date`, `date_from`, `date_to`, `status`, `q`, `page`, `page_size` |
 | `POST` | `/api/v1/admin/bookings` | Create a booking by hand (not rate limited, up to 90 days ahead) |
 | `GET` | `/api/v1/admin/bookings/{id}` | A single booking |
