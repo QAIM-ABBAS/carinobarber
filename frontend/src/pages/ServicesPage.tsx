@@ -3,13 +3,14 @@ import Header from '../components/Header'
 import HeroBackground from '../components/HeroBackground'
 import { ArrowStart } from '../components/icons'
 import { currency, manImage } from '../data/content'
+import { mediaUrl } from '../lib/api'
 import { useServices } from '../lib/useServices'
 import '../services.css'
 
 const faIndex = (n: number) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
 
 export default function ServicesPage() {
-  const { services, details } = useServices()
+  const { services, details, images } = useServices()
 
   return (
     <section className="hero hero--page hero--services" aria-labelledby="services-title">
@@ -29,6 +30,7 @@ export default function ServicesPage() {
         <ul className="sv__list">
           {services.map((s, i) => {
             const d = details[s.id]
+            const gallery = images[s.id] ?? []
             return (
               <li key={s.id} className="sv__item" data-featured={d?.featured || undefined} style={{ ['--i' as string]: i }}>
                 <span className="sv__num" aria-hidden="true">{faIndex(i + 1)}</span>
@@ -45,6 +47,22 @@ export default function ServicesPage() {
                         {d.includes.map((t) => <li key={t}>{t}</li>)}
                       </ul>
                     </>
+                  )}
+                  {gallery.length > 0 && (
+                    <ul className="sv__gallery" aria-label={`تصاویر ${s.label}`}>
+                      {gallery.map((src, index) => (
+                        <li key={src}>
+                          <a href={mediaUrl(src)} target="_blank" rel="noreferrer">
+                            <img
+                              src={mediaUrl(src)}
+                              alt={`${s.label} — تصویر ${faIndex(index + 1)}`}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
 

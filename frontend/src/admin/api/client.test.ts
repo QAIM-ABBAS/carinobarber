@@ -41,6 +41,24 @@ describe('apiRequest', () => {
     expect((init.headers as Record<string, string>).Authorization).toBeUndefined()
   })
 
+  it('sends FormData as multipart and leaves the content type to the browser', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ ok: true }))
+    const form = new FormData()
+    form.append('file', new Blob(['image'], { type: 'image/png' }), 'cut.png')
+
+    await apiRequest('/admin/services/1/images', {
+      method: 'POST',
+      body: form,
+      token: 'secret-token',
+    })
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    expect(init.body).toBe(form)
+    expect(headers['Content-Type']).toBeUndefined()
+    expect(headers.Authorization).toBe('Bearer secret-token')
+  })
+
   it('returns the parsed body', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ total: 3 }))
 

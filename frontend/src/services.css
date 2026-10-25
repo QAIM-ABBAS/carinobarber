@@ -49,6 +49,23 @@
 .sv__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .sv__tags li { padding: 4px 12px; border: 1px solid var(--line); font-size: 13px; color: rgb(241 242 233 / 0.8); }
 
+/* gallery of the uploaded images (the admin manages it from the panel) */
+.sv__gallery {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px;
+  max-width: 620px; margin: 16px 0 0; padding: 0; list-style: none;
+}
+.sv__gallery a {
+  display: block; aspect-ratio: 4 / 3; overflow: hidden;
+  border: 1px solid var(--line); background: rgb(0 0 0 / 0.28);
+}
+.sv__gallery img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.45s var(--ease, ease), filter 0.45s;
+}
+.sv__gallery a:hover img { transform: scale(1.05); filter: brightness(1.06); }
+.sv__gallery a:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+@media (min-width: 640px) { .sv__gallery { grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)); } }
+
 .sv__meta { grid-area: meta; display: flex; gap: 32px; margin: 0; }
 .sv__meta div { display: grid; gap: 2px; }
 .sv__meta dt { font-size: 12.5px; color: rgb(241 242 233 / 0.55); }

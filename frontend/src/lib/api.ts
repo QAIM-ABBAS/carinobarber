@@ -88,6 +88,7 @@ export interface ApiService {
   price: number
   duration_minutes: number
   includes: string[]
+  images: string[]
   featured: boolean
 }
 
@@ -136,6 +137,17 @@ export interface CreateBookingInput {
 /** The active services of the shop. */
 export function fetchServices(): Promise<ApiService[]> {
   return request<ApiService[]>('/services')
+}
+
+/**
+ * The absolute URL of an uploaded file.
+ *
+ * The API stores relative paths (`/api/v1/media/...`) so they keep working
+ * behind the dev proxy and in docker; a cross-origin `VITE_API_URL` is prefixed.
+ */
+export function mediaUrl(path: string): string {
+  if (/^(?:https?:)?\/\//i.test(path) || path.startsWith('data:')) return path
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 /**

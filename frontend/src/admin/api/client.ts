@@ -102,7 +102,10 @@ export function buildQuery(params: Record<string, string | number | undefined | 
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, token, signal, handleUnauthorized = true } = options
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
+  const headers: Record<string, string> = {}
+  // FormData has to set its own multipart boundary.
+  if (!isFormData) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
 
   let response: Response
@@ -111,7 +114,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       method,
       headers,
       signal,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
     })
   } catch {
     throw new ApiError(0, 'network_error', NETWORK_ERROR_MESSAGE)

@@ -14,6 +14,7 @@ export interface AdminService {
   price: number
   duration_minutes: number
   includes: string[]
+  images: string[]
   featured: boolean
   is_active: boolean
   sort_order: number

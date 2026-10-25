@@ -205,6 +205,48 @@ export function useDeactivateService() {
   })
 }
 
+/** Upload one image and append it to the gallery of the service. */
+export function useUploadServiceImage() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiRequest<AdminService>(`/admin/services/${id}/images`, {
+        method: 'POST',
+        body: form,
+        token,
+      })
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<AdminService[]>(queryKeys.services, (current) =>
+        current?.map((service) => (service.id === updated.id ? updated : service)),
+      )
+      void queryClient.invalidateQueries({ queryKey: queryKeys.services })
+    },
+  })
+}
+
+/** Remove one image of the service (the file is deleted by the API too). */
+export function useDeleteServiceImage() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, filename }: { id: number; filename: string }) =>
+      apiRequest<AdminService>(
+        `/admin/services/${id}/images/${encodeURIComponent(filename)}`,
+        { method: 'DELETE', token },
+      ),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<AdminService[]>(queryKeys.services, (current) =>
+        current?.map((service) => (service.id === updated.id ? updated : service)),
+      )
+      void queryClient.invalidateQueries({ queryKey: queryKeys.services })
+    },
+  })
+}
+
 /** Change the shop settings. */
 export function useUpdateSettings() {
   const { token } = useAuth()

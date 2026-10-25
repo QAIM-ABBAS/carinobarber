@@ -9,6 +9,8 @@ export interface ServicesState {
   services: Service[]
   /** The extra copy of the services page, merged with the API data. */
   details: Record<string, ServiceDetail>
+  /** The gallery of each service, keyed by the service slug. */
+  images: Record<string, string[]>
   loading: boolean
   error: string | null
 }
@@ -40,6 +42,7 @@ function mergeDetails(list: ApiService[]): Record<string, ServiceDetail> {
 export function useServices(): ServicesState {
   const [services, setServices] = useState<Service[]>(fallbackServices)
   const [details, setDetails] = useState<Record<string, ServiceDetail>>(fallbackDetails)
+  const [images, setImages] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,6 +54,7 @@ export function useServices(): ServicesState {
         if (cancelled || !list.length) return
         setServices(list.map((s) => ({ id: s.id, label: s.label, price: formatPrice(s.price) })))
         setDetails(mergeDetails(list))
+        setImages(Object.fromEntries(list.map((s) => [s.id, s.images ?? []])))
         setError(null)
       })
       .catch((err: unknown) => {
@@ -66,5 +70,5 @@ export function useServices(): ServicesState {
     }
   }, [])
 
-  return { services, details, loading, error }
+  return { services, details, images, loading, error }
 }

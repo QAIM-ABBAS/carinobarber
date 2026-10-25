@@ -10,8 +10,17 @@ import PageHeader from '../components/PageHeader'
 import { SkeletonTable } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { formatNumber, formatToman } from '../lib/format'
-import { ArrowDownIcon, ArrowUpIcon, EditIcon, PlusIcon, StarIcon, TrashIcon } from '../layout/icons'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  EditIcon,
+  ImagesIcon,
+  PlusIcon,
+  StarIcon,
+  TrashIcon,
+} from '../layout/icons'
 import ServiceFormModal from './ServiceFormModal'
+import ServiceImagesModal from './ServiceImagesModal'
 
 /** The services of the shop: the inactive ones are dimmed but still listed. */
 export default function AdminServicesPage() {
@@ -22,10 +31,13 @@ export default function AdminServicesPage() {
 
   const [editing, setEditing] = useState<AdminService | null>(null)
   const [formOpen, setFormOpen] = useState(false)
+  const [galleryServiceId, setGalleryServiceId] = useState<number | null>(null)
   const [deactivating, setDeactivating] = useState<AdminService | null>(null)
   const [busy, setBusy] = useState(false)
 
   const items = services.data ?? []
+  const galleryService =
+    galleryServiceId === null ? null : (items.find((item) => item.id === galleryServiceId) ?? null)
 
   const toggleActive = async (service: AdminService) => {
     try {
@@ -194,6 +206,14 @@ export default function AdminServicesPage() {
                       <Button
                         size="sm"
                         variant="secondary"
+                        icon={<ImagesIcon />}
+                        onClick={() => setGalleryServiceId(service.id)}
+                      >
+                        تصاویر
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
                         icon={<EditIcon />}
                         onClick={() => {
                           setEditing(service)
@@ -228,6 +248,12 @@ export default function AdminServicesPage() {
           setFormOpen(false)
           setEditing(null)
         }}
+      />
+
+      <ServiceImagesModal
+        open={galleryService !== null}
+        service={galleryService}
+        onClose={() => setGalleryServiceId(null)}
       />
 
       <ConfirmDialog

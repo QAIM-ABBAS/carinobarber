@@ -124,6 +124,27 @@ export function TrashIcon(props: IconProps) {
   )
 }
 
+/** The framed picture of the service images. */
+export function ImagesIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="1" />
+      <circle cx="9" cy="9.8" r="1.7" />
+      <path d="m4.5 17 5-5 4 4 2.5-2.5 5.5 5.5" />
+    </svg>
+  )
+}
+
+/** The arrow that points up out of a tray (the upload button). */
+export function UploadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 16V4M7.5 8.5 12 4l4.5 4.5" />
+      <path d="M4 15v4.5h16V15" />
+    </svg>
+  )
+}
+
 /** The star of the featured services. */
 export function StarIcon(props: IconProps) {
   return (
