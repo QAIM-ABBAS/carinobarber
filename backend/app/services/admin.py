@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from pathlib import Path
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ from app.schemas.admin import (
 )
 from app.services.availability import get_shop_settings
 from app.services.bookings import create_booking_record
+from app.services.media import MAX_IMAGES_PER_SERVICE
 
 #: How many days ahead the admin may create a booking (the public window is shorter).
 ADMIN_BOOKING_MAX_DAYS_AHEAD = 90
@@ -108,6 +110,50 @@ def deactivate_service(session: Session, service_id: int) -> Service:
     service.is_active = False
     session.commit()
     return service
+
+
+def add_service_image(session: Session, service_id: int, image_url: str) -> Service:
+    """Append an uploaded image to a service.
+
+    Raises:
+        AppError: 404 ``service_not_found`` when the service does not exist and
+            400 ``too_many_images`` when the service already has the maximum.
+    """
+    service = get_service(session, service_id)
+    images = list(service.images or [])
+    if len(images) >= MAX_IMAGES_PER_SERVICE:
+        raise AppError(
+            code="too_many_images",
+            message=f"هر خدمت حداکثر {MAX_IMAGES_PER_SERVICE} تصویر می‌تواند داشته باشد.",
+            status_code=400,
+        )
+    images.append(image_url)
+    service.images = images
+    session.commit()
+    return service
+
+
+def remove_service_image(session: Session, service_id: int, filename: str) -> tuple[Service, str]:
+    """Remove an image of a service and return the service plus the removed URL.
+
+    Raises:
+        AppError: 404 ``service_not_found`` when the service does not exist and
+            404 ``image_not_found`` when the image does not belong to it.
+    """
+    service = get_service(session, service_id)
+    image_url = next(
+        (url for url in (service.images or []) if Path(url).name == filename),
+        None,
+    )
+    if image_url is None:
+        raise AppError(
+            code="image_not_found",
+            message="تصویر مورد نظر یافت نشد.",
+            status_code=404,
+        )
+    service.images = [url for url in (service.images or []) if url != image_url]
+    session.commit()
+    return service, image_url
 
 
 def _apply_filters(statement, filters: BookingFilters):

@@ -29,6 +29,7 @@ def test_service_payload_uses_the_slug_as_id(client: TestClient) -> None:
         "price",
         "duration_minutes",
         "includes",
+        "images",
         "featured",
     }
     assert first == {
@@ -40,6 +41,7 @@ def test_service_payload_uses_the_slug_as_id(client: TestClient) -> None:
         "price": 400000,
         "duration_minutes": 45,
         "includes": ["شست‌وشو", "کوتاهی", "حالت‌دهی"],
+        "images": [],
         "featured": False,
     }
 

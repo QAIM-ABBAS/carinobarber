@@ -34,6 +34,9 @@ class Service(Base):
     includes: Mapped[list[str]] = mapped_column(
         MutableList.as_mutable(JSON), nullable=False, default=list
     )
+    images: Mapped[list[str]] = mapped_column(
+        MutableList.as_mutable(JSON), nullable=False, default=list
+    )
     featured: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("false")
     )

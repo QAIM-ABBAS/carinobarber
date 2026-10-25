@@ -20,6 +20,7 @@ class ServiceInfo:
     price: int
     duration_minutes: int
     includes: list[str]
+    images: list[str]
     featured: bool
 
 
@@ -36,6 +37,7 @@ def list_active_services(session: Session) -> list[ServiceInfo]:
             price=service.price,
             duration_minutes=service.duration_minutes,
             includes=list(service.includes or []),
+            images=list(service.images or []),
             featured=service.featured,
         )
         for service in services

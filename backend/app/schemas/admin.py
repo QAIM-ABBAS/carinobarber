@@ -42,6 +42,7 @@ class ServiceAdminOut(BaseModel):
     price: int
     duration_minutes: int
     includes: list[str]
+    images: list[str]
     featured: bool
     is_active: bool
     sort_order: int

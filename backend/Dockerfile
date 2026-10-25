@@ -22,6 +22,7 @@ COPY entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh \
     && useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/uploads \
     && chown -R appuser:appuser /app
 
 USER appuser

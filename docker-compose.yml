@@ -27,6 +27,9 @@ services:
       # Host-only: the browser never talks to the API directly — the frontend
       # container proxies /api to api:8000 over the compose network.
       - "127.0.0.1:${API_PORT:-8080}:8000"
+    volumes:
+      # The uploaded service images outlive the container.
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -58,3 +61,4 @@ services:
 volumes:
   pgdata:
   frontend_node_modules:
+  uploads:

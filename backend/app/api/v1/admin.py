@@ -4,8 +4,20 @@ from __future__ import annotations
 
 from datetime import date as Date
 from datetime import datetime
+from pathlib import Path as MediaPath
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Path,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
@@ -33,6 +45,7 @@ from app.schemas.admin import (
 )
 from app.schemas.common import ERROR_RESPONSES
 from app.services import admin as admin_service
+from app.services import media
 from app.services.admin import BookingFilters
 from app.services.availability import get_shop_settings
 from app.services.sms import build_booking_created_message, send_sms_safely
@@ -42,6 +55,9 @@ admin_router = APIRouter(
     tags=["admin"],
     responses={401: ERROR_RESPONSES[401]},
 )
+
+#: The generated file name of an uploaded service image (see ``app.services.media``).
+IMAGE_FILENAME_PATTERN = r"^[a-f0-9]{32}\.(?:jpg|png|webp)$"
 
 
 @admin_router.post(
@@ -131,6 +147,77 @@ def admin_delete_service(
 ) -> ServiceAdminOut:
     """Deactivate a service (soft delete)."""
     return ServiceAdminOut.model_validate(admin_service.deactivate_service(db, service_id))
+
+
+@admin_router.post(
+    "/services/{service_id}/images",
+    response_model=ServiceAdminOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="افزودن تصویر خدمت",
+    responses={400: ERROR_RESPONSES[400], 404: ERROR_RESPONSES[404]},
+)
+async def admin_upload_service_image(
+    request: Request,
+    service_id: int,
+    file: UploadFile = File(description="تصویر JPEG، PNG یا WebP (حداکثر ۵ مگابایت)"),
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ServiceAdminOut:
+    """Upload one image and append it to the gallery of the service."""
+    upload_dir = MediaPath(request.app.state.settings.upload_dir)
+
+    # Fail with 404 before reading or writing the file.
+    admin_service.get_service(db, service_id)
+
+    content = await file.read(media.MAX_IMAGE_BYTES + 1)
+    if not content:
+        raise AppError(
+            code="invalid_image",
+            message="فایل تصویر خالی است.",
+            status_code=400,
+        )
+    if len(content) > media.MAX_IMAGE_BYTES:
+        raise AppError(
+            code="image_too_large",
+            message="حجم تصویر نباید بیشتر از ۵ مگابایت باشد.",
+            status_code=400,
+        )
+
+    extension = media.detect_image_extension(content)
+    if extension is None:
+        raise AppError(
+            code="invalid_image",
+            message="فقط تصویر JPEG، PNG یا WebP مجاز است.",
+            status_code=400,
+        )
+
+    image_url = media.save_service_image(upload_dir, content, extension)
+    try:
+        service = admin_service.add_service_image(db, service_id, image_url)
+    except Exception:
+        # Do not leave an orphan file behind when the database rejects the image.
+        media.delete_service_image_file(upload_dir, image_url)
+        raise
+    return ServiceAdminOut.model_validate(service)
+
+
+@admin_router.delete(
+    "/services/{service_id}/images/{filename}",
+    response_model=ServiceAdminOut,
+    summary="حذف تصویر خدمت",
+    responses={404: ERROR_RESPONSES[404]},
+)
+def admin_delete_service_image(
+    request: Request,
+    service_id: int,
+    filename: str = Path(pattern=IMAGE_FILENAME_PATTERN, description="نام فایل تصویر"),
+    db: Session = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+) -> ServiceAdminOut:
+    """Remove one image of the service and delete the file from disk."""
+    service, image_url = admin_service.remove_service_image(db, service_id, filename)
+    media.delete_service_image_file(MediaPath(request.app.state.settings.upload_dir), image_url)
+    return ServiceAdminOut.model_validate(service)
 
 
 @admin_router.get(

@@ -16,4 +16,5 @@ class ServiceOut(BaseModel):
     price: int = Field(description="قیمت به تومان")
     duration_minutes: int = Field(description="مدت زمان به دقیقه")
     includes: list[str] = Field(default_factory=list, description="موارد شامل خدمت")
+    images: list[str] = Field(default_factory=list, description="تصاویر خدمت")
     featured: bool = Field(default=False, description="خدمت ویژه")

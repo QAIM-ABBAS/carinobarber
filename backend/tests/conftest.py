@@ -26,7 +26,7 @@ TEST_DATABASE_URL = "sqlite+pysqlite:///:memory:"
 
 
 @pytest.fixture(scope="session")
-def settings() -> Settings:
+def settings(tmp_path_factory: pytest.TempPathFactory) -> Settings:
     """Return deterministic settings for the test suite."""
     get_settings.cache_clear()
     return Settings(
@@ -34,6 +34,7 @@ def settings() -> Settings:
         seed_on_start=False,
         rate_limit_bookings_per_minute=5,
         cors_origins=["http://testserver"],
+        upload_dir=tmp_path_factory.mktemp("uploads"),
     )
 
 

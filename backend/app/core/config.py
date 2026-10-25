@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     seed_on_start: bool = True
     sms_provider: str = "console"
     rate_limit_bookings_per_minute: int = 5
+    upload_dir: Path = BACKEND_DIR / "uploads"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

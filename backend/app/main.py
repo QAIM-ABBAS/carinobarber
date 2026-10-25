@@ -7,9 +7,11 @@ import logging
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.public import health_router
 from app.api.v1.router import api_router
@@ -106,6 +108,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = app_settings
 
+    # The uploaded service images. The directory has to exist before the static
+    # files app is mounted (the named docker volume starts empty).
+    upload_dir = Path(app_settings.upload_dir)
+    (upload_dir / "services").mkdir(parents=True, exist_ok=True)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.cors_origins,
@@ -117,6 +124,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(api_router, prefix="/api/v1")
     app.include_router(health_router)
+    app.mount("/api/v1/media", StaticFiles(directory=upload_dir), name="media")
 
     register_exception_handlers(app)
     return app
