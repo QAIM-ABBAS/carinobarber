@@ -33,7 +33,14 @@ def _make_booking(session: Session, code: str, day: date, time: str = "10:00") -
 
 
 def test_metadata_contains_all_tables() -> None:
-    assert set(Base.metadata.tables) == {"services", "bookings", "shop_settings", "closed_dates"}
+    assert set(Base.metadata.tables) == {
+        "services",
+        "bookings",
+        "shop_settings",
+        "closed_dates",
+        "users",
+        "otp_codes",
+    }
 
 
 def test_seed_creates_six_services_and_settings(db_session: Session) -> None:
@@ -166,6 +173,7 @@ def test_indexes_are_created(db_session: Session) -> None:
     assert "uq_bookings_active_slot" in booking_indexes
     assert "ix_bookings_phone" in booking_indexes
     assert "ix_bookings_date" in booking_indexes
+    assert "ix_bookings_user_id" in booking_indexes
 
 
 def test_updated_at_refreshes_on_update(db_session: Session) -> None:

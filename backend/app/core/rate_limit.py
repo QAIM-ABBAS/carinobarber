@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import threading
 import time
 from collections import deque
@@ -15,6 +16,9 @@ WINDOW_SECONDS = 60
 
 #: How many login attempts a single client IP may make per minute.
 LOGIN_ATTEMPTS_PER_MINUTE = 5
+
+#: How many OTP requests a single client IP may make per minute.
+OTP_REQUESTS_PER_MINUTE = 10
 
 
 class RateLimiter:
@@ -40,6 +44,19 @@ class RateLimiter:
             hits.append(now)
             return True
 
+    def retry_after(self, key: str) -> int:
+        """Return the seconds until the key may hit the limiter again."""
+        now = time.monotonic()
+        with self._lock:
+            hits = self._hits.get(key)
+            if not hits:
+                return 0
+            while hits and now - hits[0] >= self.window_seconds:
+                hits.popleft()
+            if len(hits) < self.limit:
+                return 0
+            return max(1, math.ceil(self.window_seconds - (now - hits[0])))
+
     def reset(self) -> None:
         """Forget every recorded hit."""
         with self._lock:
@@ -51,6 +68,9 @@ _limiter_lock = threading.Lock()
 
 _login_limiter: RateLimiter | None = None
 _login_limiter_lock = threading.Lock()
+
+_otp_limiter: RateLimiter | None = None
+_otp_limiter_lock = threading.Lock()
 
 
 def get_rate_limiter(settings: Settings | None = None) -> RateLimiter:
@@ -72,15 +92,27 @@ def get_login_rate_limiter() -> RateLimiter:
         return _login_limiter
 
 
+def get_otp_rate_limiter() -> RateLimiter:
+    """Return the shared limiter of the OTP request endpoint (per client IP)."""
+    global _otp_limiter
+    with _otp_limiter_lock:
+        if _otp_limiter is None:
+            _otp_limiter = RateLimiter(limit=OTP_REQUESTS_PER_MINUTE)
+        return _otp_limiter
+
+
 def reset_rate_limiter() -> None:
     """Clear the recorded hits of every limiter (used by the test suite)."""
-    global _limiter, _login_limiter
+    global _limiter, _login_limiter, _otp_limiter
     with _limiter_lock:
         if _limiter is not None:
             _limiter.reset()
     with _login_limiter_lock:
         if _login_limiter is not None:
             _login_limiter.reset()
+    with _otp_limiter_lock:
+        if _otp_limiter is not None:
+            _otp_limiter.reset()
 
 
 def client_key(request: Request) -> str:
@@ -102,6 +134,23 @@ def rate_limit_bookings(request: Request) -> None:
             code="rate_limited",
             message="تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.",
             status_code=429,
+        )
+
+
+def rate_limit_otp_request(request: Request) -> None:
+    """Limit OTP requests per client IP.
+
+    Raises:
+        AppError: 429 ``otp_rate_limited`` with the seconds to wait.
+    """
+    key = client_key(request)
+    limiter = get_otp_rate_limiter()
+    if not limiter.allow(key):
+        raise AppError(
+            code="otp_rate_limited",
+            message="تعداد درخواست کد بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.",
+            status_code=429,
+            details={"retry_after": limiter.retry_after(key)},
         )
 
 

@@ -7,9 +7,11 @@ from datetime import date, datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_customer
 from app.core.rate_limit import rate_limit_bookings
 from app.core.timeutil import get_now
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.availability import AvailabilityOut, DayAvailabilityOut
 from app.schemas.booking import BookingCancel, BookingCreate, BookingOut
 from app.schemas.common import ERROR_RESPONSES
@@ -77,19 +79,21 @@ def availability(
 def create_booking_endpoint(
     payload: BookingCreate,
     background_tasks: BackgroundTasks,
-    _rate_limit: None = Depends(rate_limit_bookings),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_customer),
+    _rate_limit: None = Depends(rate_limit_bookings),
     now: datetime = Depends(get_now),
 ) -> BookingOut:
-    """Book a slot. The confirmation SMS is sent in the background."""
+    """Book a slot for the logged in customer; the confirmation SMS is backgrounded."""
     booking = create_booking(
         session=db,
         service_id=payload.service_id,
         day=payload.date,
         time=payload.time,
         name=payload.name,
-        phone=payload.phone,
+        phone=user.phone,
         now=now,
+        user_id=user.id,
     )
     background_tasks.add_task(
         send_sms_safely,

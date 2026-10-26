@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://gc:gc@db:5432/gentlemans_club"
     secret_key: str = DEFAULT_SECRET_KEY
     access_token_expire_minutes: int = 720
+    customer_token_expire_days: int = 30
+    otp_dev_mode: bool = True
+    otp_ttl_seconds: int = 120
+    otp_resend_seconds: int = 60
+    otp_max_per_hour: int = 5
     admin_username: str = "admin"
     admin_password: str = DEFAULT_ADMIN_PASSWORD
     cors_origins: Annotated[list[str], NoDecode] = Field(
@@ -87,6 +92,18 @@ class Settings(BaseSettings):
 
         if self.access_token_expire_minutes <= 0:
             raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be a positive number")
+
+        if self.customer_token_expire_days <= 0:
+            raise RuntimeError("CUSTOMER_TOKEN_EXPIRE_DAYS must be a positive number")
+
+        if self.otp_ttl_seconds <= 0:
+            raise RuntimeError("OTP_TTL_SECONDS must be a positive number")
+
+        if self.otp_resend_seconds <= 0:
+            raise RuntimeError("OTP_RESEND_SECONDS must be a positive number")
+
+        if self.otp_max_per_hour <= 0:
+            raise RuntimeError("OTP_MAX_PER_HOUR must be a positive number")
 
         if self.rate_limit_bookings_per_minute <= 0:
             raise RuntimeError("RATE_LIMIT_BOOKINGS_PER_MINUTE must be a positive number")

@@ -14,6 +14,16 @@ from jwt import InvalidTokenError
 from app.core.config import Settings, get_settings
 
 ALGORITHM = "HS256"
+ADMIN_ROLE = "admin"
+CUSTOMER_ROLE = "customer"
+
+
+@dataclass(frozen=True)
+class TokenPayload:
+    """The verified claims the API needs from an access token."""
+
+    subject: str
+    role: str
 
 
 @dataclass(frozen=True)
@@ -63,12 +73,18 @@ def verify_admin_login(credentials: AdminCredentials, username: str, password: s
     return username_matches and password_matches
 
 
-def create_access_token(subject: str, expires_minutes: int | None = None) -> tuple[str, int]:
+def create_access_token(
+    subject: str,
+    expires_minutes: int | None = None,
+    *,
+    role: str = ADMIN_ROLE,
+) -> tuple[str, int]:
     """Create a signed access token.
 
     Args:
-        subject: the identity stored in the token (the admin username).
-        expires_minutes: lifetime of the token; the configured value by default.
+        subject: the identity stored in the token (admin username or user id).
+        expires_minutes: lifetime of the token; the configured admin value by default.
+        role: the only role that may use the token (``admin`` or ``customer``).
 
     Returns:
         A tuple of the encoded token and its lifetime in seconds.
@@ -80,6 +96,7 @@ def create_access_token(subject: str, expires_minutes: int | None = None) -> tup
     issued_at = datetime.now(UTC)
     payload = {
         "sub": subject,
+        "role": role,
         "iat": issued_at,
         "exp": issued_at + timedelta(minutes=lifetime),
     }
@@ -87,12 +104,31 @@ def create_access_token(subject: str, expires_minutes: int | None = None) -> tup
     return token, lifetime * 60
 
 
-def decode_access_token(token: str) -> str | None:
-    """Return the subject of a valid token, or None when the token is invalid."""
+def create_customer_token(
+    user_id: int,
+    expires_days: int | None = None,
+) -> tuple[str, int]:
+    """Create the 30-day (by default) token of a customer account."""
+    settings = get_settings()
+    days = expires_days if expires_days is not None else settings.customer_token_expire_days
+    return create_access_token(str(user_id), expires_minutes=days * 24 * 60, role=CUSTOMER_ROLE)
+
+
+def decode_token(token: str) -> TokenPayload | None:
+    """Return the verified claims of a token, or None when it is invalid."""
     settings = get_settings()
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     except InvalidTokenError:
         return None
     subject = payload.get("sub")
-    return subject if isinstance(subject, str) else None
+    role = payload.get("role")
+    if not isinstance(subject, str) or not isinstance(role, str):
+        return None
+    return TokenPayload(subject=subject, role=role)
+
+
+def decode_access_token(token: str) -> str | None:
+    """Return the subject of a valid token, or None when the token is invalid."""
+    payload = decode_token(token)
+    return payload.subject if payload is not None else None

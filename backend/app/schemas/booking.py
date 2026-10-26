@@ -8,15 +8,18 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BookingCreate(BaseModel):
-    """Body of a booking creation request."""
+    """Body of an authenticated booking creation request.
 
-    model_config = ConfigDict(extra="forbid")
+    The phone of the authenticated customer is authoritative; a legacy ``phone``
+    field in the body is ignored instead of being rejected.
+    """
+
+    model_config = ConfigDict(extra="ignore")
 
     service_id: str = Field(min_length=1, max_length=50, description="شناسه خدمت (slug)")
     date: Date = Field(description="تاریخ نوبت به فرمت YYYY-MM-DD")
     time: str = Field(min_length=1, max_length=10, description="ساعت نوبت به فرمت HH:mm")
     name: str = Field(min_length=2, max_length=100, description="نام و نام خانوادگی")
-    phone: str = Field(max_length=64, description="شماره موبایل")
 
     @field_validator("name", mode="before")
     @classmethod

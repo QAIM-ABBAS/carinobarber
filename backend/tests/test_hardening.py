@@ -9,7 +9,13 @@ from fastapi.testclient import TestClient
 from app.core.config import DEFAULT_ADMIN_PASSWORD, DEFAULT_SECRET_KEY, Settings
 from app.core.errors import register_exception_handlers
 from app.core.middleware import mask_sensitive_query
-from app.core.security import create_access_token, decode_access_token, hash_password
+from app.core.security import (
+    create_access_token,
+    create_customer_token,
+    decode_access_token,
+    decode_token,
+    hash_password,
+)
 
 PRODUCTION_SECRETS = {
     "secret_key": "a-very-long-and-random-secret-key-for-tests-1234567890",
@@ -125,6 +131,18 @@ def test_a_token_round_trip_returns_the_subject() -> None:
     token, expires_in = create_access_token("admin")
     assert expires_in == 720 * 60
     assert decode_access_token(token) == "admin"
+    payload = decode_token(token)
+    assert payload is not None
+    assert payload.role == "admin"
+
+
+def test_a_customer_token_has_the_customer_role() -> None:
+    token, expires_in = create_customer_token(42)
+    assert expires_in == 30 * 24 * 60 * 60
+    payload = decode_token(token)
+    assert payload is not None
+    assert payload.role == "customer"
+    assert payload.subject == "42"
 
 
 def test_a_tampered_token_is_rejected() -> None:
@@ -159,11 +177,13 @@ def test_method_not_allowed_uses_the_unified_envelope(client: TestClient) -> Non
     assert body["error"]["message"]
 
 
-def test_malformed_json_uses_the_unified_envelope(client: TestClient) -> None:
+def test_malformed_json_uses_the_unified_envelope(
+    client: TestClient, customer_headers
+) -> None:
     response = client.post(
         "/api/v1/bookings",
         content="{not-json",
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", **customer_headers},
     )
     assert response.status_code == 422
     body = response.json()

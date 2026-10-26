@@ -89,6 +89,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app_settings.validate_or_raise()
     configure_logging()
 
+    if app_settings.otp_dev_mode and app_settings.is_production:
+        logger.warning(
+            "SECURITY WARNING: OTP_DEV_MODE is enabled in production. "
+            "Login codes are returned in API responses. "
+            "Set OTP_DEV_MODE=false and configure a real SMS provider."
+        )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         app.state.admin_credentials = build_admin_credentials(app_settings)

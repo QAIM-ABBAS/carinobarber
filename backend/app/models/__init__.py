@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from app.models.booking import ACTIVE_STATUSES, Booking, BookingStatus
 from app.models.closed_date import ClosedDate
+from app.models.otp_code import OtpCode
 from app.models.service import Service
 from app.models.shop_settings import SETTINGS_ROW_ID, ShopSettings
+from app.models.user import User
 
 __all__ = [
     "ACTIVE_STATUSES",
@@ -13,6 +15,8 @@ __all__ = [
     "Booking",
     "BookingStatus",
     "ClosedDate",
+    "OtpCode",
     "Service",
     "ShopSettings",
+    "User",
 ]

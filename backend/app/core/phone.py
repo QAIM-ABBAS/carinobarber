@@ -18,6 +18,11 @@ _COUNTRY_PATTERN = re.compile(r"^98(9\d{9})$")
 _INTERNATIONAL_PATTERN = re.compile(r"^0098(9\d{9})$")
 
 
+def normalize_digits(value: str) -> str:
+    """Convert Persian and Arabic-Indic digits of a string to ASCII digits."""
+    return value.translate(_DIGIT_TRANSLATION)
+
+
 class InvalidPhoneError(ValueError):
     """Raised when a phone number cannot be normalized."""
 

@@ -13,6 +13,7 @@ from app.db.base import NOW, Base, UTCDateTime
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from app.models.service import Service
+    from app.models.user import User
 
 
 class BookingStatus(StrEnum):
@@ -50,6 +51,7 @@ class Booking(Base):
         ),
         Index("ix_bookings_phone", "phone"),
         Index("ix_bookings_date", "date"),
+        Index("ix_bookings_user_id", "user_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -61,6 +63,9 @@ class Booking(Base):
     time: Mapped[str] = mapped_column(String(5), nullable=False)
     customer_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str] = mapped_column(String(11), nullable=False)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
@@ -77,6 +82,7 @@ class Booking(Base):
     )
 
     service: Mapped[Service] = relationship(back_populates="bookings", lazy="joined")
+    user: Mapped[User | None] = relationship(back_populates="bookings")
 
     def __repr__(self) -> str:  # pragma: no cover - debugging helper
         return f"<Booking id={self.id} code={self.code!r} {self.date} {self.time}>"

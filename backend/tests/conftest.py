@@ -13,14 +13,20 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import reset_rate_limiter
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_customer_token
 from app.core.timeutil import get_now
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
+from app.models.user import User
 from app.seed import seed_database
 from app.services.sms import set_sms_provider
-from tests.helpers import FIXED_NOW, SpySmsProvider
+from tests.helpers import (
+    FIXED_NOW,
+    SpySmsProvider,
+    customer_headers_for,
+    make_customer,
+)
 
 TEST_DATABASE_URL = "sqlite+pysqlite:///:memory:"
 
@@ -111,6 +117,29 @@ def app(settings: Settings, db_session: Session, now: datetime):
     application.dependency_overrides[get_db] = override_get_db
     application.dependency_overrides[get_now] = lambda: now
     return application
+
+
+@pytest.fixture()
+def customer_user(db_session: Session) -> User:
+    """Return a saved customer with the default test phone."""
+    return make_customer(db_session)
+
+
+@pytest.fixture()
+def customer_headers(customer_user: User) -> dict[str, str]:
+    """Return the authorization header of a logged in customer."""
+    token, _ = create_customer_token(customer_user.id)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def customer_headers_for_phone(db_session: Session):
+    """Return a factory that creates customers and their bearer headers."""
+
+    def _headers(phone: str, name: str = "مشتری دوم") -> dict[str, str]:
+        return customer_headers_for(db_session, phone=phone, name=name)
+
+    return _headers
 
 
 @pytest.fixture()

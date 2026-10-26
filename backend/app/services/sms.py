@@ -6,6 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from app.core.config import get_settings
+from app.core.phone import mask_phone
 
 logger = logging.getLogger("gc.sms")
 
@@ -70,7 +71,12 @@ def send_sms_safely(phone: str, text: str) -> None:
         get_sms_provider().send(phone, text)
     except Exception:
         # A failing SMS must never break the request that triggered it.
-        logger.exception("Could not send the SMS to %s", phone)
+        logger.exception("Could not send the SMS to %s", mask_phone(phone))
+
+
+def build_otp_message(code: str) -> str:
+    """Return the Persian login message that carries the one time code."""
+    return f"کد ورود شما به باشگاه جنتلمن‌ها: {code}"
 
 
 def build_booking_created_message(code: str, day: str, time: str) -> str:

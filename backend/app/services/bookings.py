@@ -16,6 +16,7 @@ from app.core.phone import InvalidPhoneError, normalize_phone
 from app.core.timeutil import booking_window_bounds, ensure_aware, get_shop_timezone, slot_datetime
 from app.models.booking import ACTIVE_STATUSES, Booking, BookingStatus
 from app.models.service import Service
+from app.models.user import User
 from app.services.availability import (
     generate_slot_times,
     get_closed_dates,
@@ -102,6 +103,16 @@ def _normalize_phone(phone: str) -> str:
         ) from exc
 
 
+def is_cancellable(booking: Booking, now: datetime, cancel_before_hours: int) -> bool:
+    """Return whether the existing cancel rule allows cancelling this booking."""
+    if booking.status not in ACTIVE_STATUSES:
+        return False
+    starts_at = slot_datetime(booking.date, int(booking.time[:2]))
+    return starts_at - ensure_aware(now).astimezone(get_shop_timezone()) >= timedelta(
+        hours=cancel_before_hours
+    )
+
+
 def _count_active_bookings(session: Session, phone: str, today: date) -> int:
     """Count the pending/confirmed bookings of a phone number from today on."""
     return (
@@ -150,6 +161,7 @@ def create_booking(
     name: str,
     phone: str,
     now: datetime,
+    user_id: int | None = None,
 ) -> BookingResult:
     """Create a booking after running every validation in order.
 
@@ -161,6 +173,7 @@ def create_booking(
         name: customer name.
         phone: customer phone number (any accepted format).
         now: current moment (shop timezone).
+        user_id: account that owns the booking, when known.
 
     Returns:
         The created booking.
@@ -176,6 +189,7 @@ def create_booking(
         name=name,
         phone=phone,
         now=now,
+        user_id=user_id,
     )
     return _to_result(booking)
 
@@ -192,6 +206,7 @@ def create_booking_record(
     status: str = BookingStatus.PENDING.value,
     max_days_ahead: int | None = None,
     enforce_phone_cap: bool = True,
+    user_id: int | None = None,
 ) -> Booking:
     """Insert a booking row and return the ORM record.
 
@@ -212,6 +227,8 @@ def create_booking_record(
             the booking window of the shop settings.
         enforce_phone_cap: whether the per phone number limit of active bookings
             applies (the admin endpoint lifts it).
+        user_id: account that owns the booking. When omitted, an existing user with
+            the same phone is linked automatically (used by admin bookings).
 
     Returns:
         The created booking row.
@@ -222,6 +239,8 @@ def create_booking_record(
     moment = ensure_aware(now).astimezone(get_shop_timezone())
     normalized_phone = _normalize_phone(phone)
     customer_name = name.strip()
+    if user_id is None:
+        user_id = session.scalar(select(User.id).where(User.phone == normalized_phone))
 
     service = _find_service(session, service_id)
 
@@ -276,6 +295,7 @@ def create_booking_record(
         time=time,
         customer_name=customer_name,
         phone=normalized_phone,
+        user_id=user_id,
         status=status,
         price_at_booking=service.price,
     )
@@ -332,16 +352,14 @@ def cancel_booking(
         )
 
     settings = get_shop_settings(session)
-    cancellable = (BookingStatus.PENDING.value, BookingStatus.CONFIRMED.value)
-    if booking.status not in cancellable:
+    if booking.status not in ACTIVE_STATUSES:
         raise AppError(
             code="cancel_not_allowed",
             message="این نوبت قابل لغو نیست.",
             status_code=409,
         )
 
-    starts_at = slot_datetime(booking.date, int(booking.time[:2]))
-    if starts_at - moment < timedelta(hours=settings.cancel_before_hours):
+    if not is_cancellable(booking, moment, settings.cancel_before_hours):
         raise AppError(
             code="cancel_not_allowed",
             message="امکان لغو این نوبت وجود ندارد.",
