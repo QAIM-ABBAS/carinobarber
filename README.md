@@ -109,6 +109,42 @@ location /admin { add_header X-Robots-Tag "noindex, nofollow"; ... }
 header /admin* X-Robots-Tag "noindex, nofollow"
 ```
 
+## حساب کاربری (Customer account)
+
+The public site has a customer account: **`/account`** — «حساب» is the last item of the navbar
+(desktop and mobile). There are **no passwords**: a customer logs in with a phone number and a
+6-digit one-time code, and the browser keeps the returned customer JWT in `localStorage`
+(`gc_customer`, it expires with the token — 30 days by default). The customer has only a name,
+a phone and her/his bookings.
+
+- **`/book`** creates a booking **only after a verified phone**: logged-out visitors get a code
+  step at the end of the form («تأیید شماره موبایل») and the booking is submitted right after
+  the correct code; logged-in visitors skip the code and get the name prefilled (editable) and
+  the phone as a read-only row. The phone never travels in the booking form — the server takes
+  it from the customer token.
+- Old bookings made with the same phone before an account existed are linked to the account on
+  the first login and appear in «حساب من».
+- **`/account`** shows the name (inline editable), the read-only phone and the bookings in two
+  tabs («نوبت‌های پیش‌رو» / «سابقه نوبت‌ها») with status badges and «لغو نوبت» where the
+  cancellation window allows it.
+
+### Dev mode (no SMS yet)
+
+With `OTP_DEV_MODE=true` (the default for now) the request endpoint also returns the plain code
+as `dev_code`, and the UI shows it in a brass dev box («حالت آزمایشی — پیامک فعال نیست») with a
+«پر کردن خودکار» button. On `APP_ENV=production` the backend logs a loud warning while this flag
+is on — it still starts (deploying without SMS is fine for now). Codes are stored only as an
+HMAC hash, and every OTP endpoint is rate limited.
+
+### Going live with real SMS later
+
+1. Implement a provider class behind the existing `SmsProvider` interface and select it with
+   `SMS_PROVIDER` (`console` is the only one shipped today, it only logs the message).
+2. Set `OTP_DEV_MODE=false` — from then on `dev_code` never leaves the API and every code is
+   sent through the provider with the text «کد ورود شما به باشگاه جنتلمن‌ها: 123456».
+3. Tune `OTP_TTL_SECONDS`, `OTP_RESEND_SECONDS`, `OTP_MAX_PER_HOUR` and
+   `CUSTOMER_TOKEN_EXPIRE_DAYS` (defaults: 120 / 60 / 5 / 30).
+
 ## Configuration
 
 `.env` in the repository root configures the whole stack (docker compose, the backend and the vite
@@ -131,11 +167,14 @@ file.
 | `SEED_ON_START` | backend | Seed the services and the shop settings on startup |
 | `UPLOAD_DIR` | backend | Folder of the uploaded service images (`backend/uploads` by default; compose uses the `uploads` volume) |
 | `SMS_PROVIDER` | backend | SMS implementation (`console` is the only one available) |
+| `OTP_DEV_MODE` | backend | While `true`, the OTP code is returned to the UI (`dev_code`) instead of being sent by SMS |
+| `OTP_TTL_SECONDS` / `OTP_RESEND_SECONDS` / `OTP_MAX_PER_HOUR` | backend | OTP code lifetime (120), resend cooldown per phone (60) and hourly request cap per phone (5) |
+| `CUSTOMER_TOKEN_EXPIRE_DAYS` | backend | Lifetime of the customer JWT (30) |
 | `RATE_LIMIT_BOOKINGS_PER_MINUTE` | backend | Booking attempts per minute and per IP |
 
 ## Tests
 
 ```bash
-cd backend  && pytest -q && ruff check .    # 185 tests
+cd backend  && pytest -q && ruff check .    # 215 tests
 cd frontend && npm run typecheck && npm test && npm run build
 ```
