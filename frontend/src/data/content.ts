@@ -29,6 +29,7 @@ export const navItems: NavItem[] = [
   { label: 'گالری', href: '/#gallery' },
   { label: 'تماس با ما', href: '/#contact' },
   { label: 'رزرو نوبت', href: '/book' },
+  { label: 'حساب', href: '/account' },
 ]
 
 export const socials = [

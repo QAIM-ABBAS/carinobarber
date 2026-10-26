@@ -160,6 +160,12 @@
 .done__ltr { unicode-bidi: plaintext; }
 .done__actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
+/* step 4 — the phone of a signed-in visitor (owned by the account) and the verify card */
+.book__phone { display: block; font-size: 15.5px; color: var(--cream); }
+.book__phone bdi { letter-spacing: 0.08em; }
+.book__hint { margin: 6px 0 0; font-size: 13px; color: rgb(241 242 233 / 0.55); }
+.book__verify-note { margin: 0 0 14px; font-size: 14px; color: rgb(241 242 233 / 0.7); }
+
 /* entrance */
 @media (prefers-reduced-motion: no-preference) {
   .book__head, .step, .summary--aside { animation: bk-rise 0.8s var(--ease, ease) both; }

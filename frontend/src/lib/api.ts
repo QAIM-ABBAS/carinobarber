@@ -11,6 +11,8 @@
  * and the Persian message of the server.
  */
 
+import { clearSession, readSession, type AuthUser } from '../auth/storage'
+
 const RAW_BASE = String(import.meta.env.VITE_API_URL ?? '').trim()
 
 /** Base URL of the API without a trailing slash (empty → same origin). */
@@ -45,13 +47,31 @@ interface ErrorEnvelope {
   }
 }
 
+type UnauthorizedHandler = () => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+/**
+ * Register the handler that runs when the API answers 401 — the customer token
+ * is gone (expired or rejected) and the session ends everywhere at once.
+ * The `AuthProvider` of the public app registers its `logout()` function.
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // The bearer token of the logged-in customer is attached to every request.
+  const session = readSession()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init.headers as Record<string, string> | undefined),
+  }
+  if (session) headers.Authorization = `Bearer ${session.token}`
+
   let response: Response
   try {
-    response = await fetch(`${API_BASE}${API_PREFIX}${path}`, {
-      ...init,
-      headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
-    })
+    response = await fetch(`${API_BASE}${API_PREFIX}${path}`, { ...init, headers })
   } catch {
     throw new ApiError(0, 'network_error', NETWORK_ERROR_MESSAGE)
   }
@@ -71,6 +91,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (response.status >= 502) {
       code = 'server_unavailable'
       message = SERVER_UNAVAILABLE_MESSAGE
+    }
+    if (response.status === 401) {
+      // An expired or rejected token never recovers by itself.
+      clearSession()
+      unauthorizedHandler?.()
     }
     throw new ApiError(response.status, code, message, details)
   }
@@ -129,7 +154,68 @@ export interface CreateBookingInput {
   date: string
   time: string
   name: string
+}
+
+/* ---------------------------------------------------------------- customer auth */
+
+export type { AuthUser } from '../auth/storage'
+
+/** The result of `POST /auth/otp/request`. */
+export interface OtpRequestResult {
+  /** Lifetime of the one-time code in seconds (e.g. 120). */
+  expires_in: number
+  /** Cooldown in seconds before a new code can be requested (e.g. 60). */
+  resend_after: number
+  /** True when this phone has no account yet — the client has to ask for a name. */
+  is_new_user: boolean
+  /** The plain code — ONLY present when the server runs with `OTP_DEV_MODE=true`. */
+  dev_code?: string | null
+}
+
+/** The result of `POST /auth/otp/verify`. */
+export interface OtpVerifyResult {
+  access_token: string
+  token_type: string
+  /** Lifetime of the customer token in seconds (default 30 days). */
+  expires_in: number
+  user: AuthUser
+}
+
+export interface OtpVerifyInput {
   phone: string
+  /** The 6-digit code (plain digits). */
+  code: string
+  /** Only needed for a phone without an account (2–100 characters). */
+  name?: string
+}
+
+/** The customer profile as returned by `GET /me` and `PATCH /me`. */
+export interface MeUser extends AuthUser {
+  created_at?: string
+}
+
+export type MyBookingsScope = 'upcoming' | 'past' | 'all'
+
+export interface MyBookingService {
+  id: string
+  label: string
+}
+
+/** One booking of the logged-in customer (`GET /me/bookings`). */
+export interface MyBooking {
+  code: string
+  status: string
+  service: MyBookingService
+  /** `YYYY-MM-DD` (Gregorian, like everywhere in the API). */
+  date: string
+  /** `HH:mm`. */
+  time: string
+  name: string
+  /** Price captured at the booking time (Toman). */
+  price_at_booking: number
+  /** Same rule as the public cancel endpoint: cancellable until it is too late. */
+  can_cancel: boolean
+  created_at: string
 }
 
 /* -------------------------------------------------------------- requests */
@@ -164,10 +250,56 @@ export function fetchAvailability(start?: string, days?: number): Promise<ApiAva
   return request<ApiAvailability>(`/availability${suffix}`)
 }
 
-/** Create a booking. */
+/**
+ * Create a booking for the logged-in customer.
+ *
+ * The phone is not part of the request: the server takes it from the customer
+ * token, so a booking is always created for the account's phone.
+ */
 export function createBooking(input: CreateBookingInput): Promise<ApiBooking> {
   return request<ApiBooking>('/bookings', {
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+/* ------------------------------------------------- customer account requests */
+
+/**
+ * Ask for a new one-time code for a phone (`POST /auth/otp/request`).
+ * In dev mode (`OTP_DEV_MODE=true`) the answer also carries the plain `dev_code`.
+ */
+export function requestOtp(phone: string): Promise<OtpRequestResult> {
+  return request<OtpRequestResult>('/auth/otp/request', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
+}
+
+/** Check the one-time code and log the customer in (`POST /auth/otp/verify`). */
+export function verifyOtp(input: OtpVerifyInput): Promise<OtpVerifyResult> {
+  return request<OtpVerifyResult>('/auth/otp/verify', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+/** The profile of the logged-in customer (`GET /me`). */
+export function getMe(): Promise<MeUser> {
+  return request<MeUser>('/me')
+}
+
+/** Change the name of the logged-in customer (`PATCH /me`). */
+export function updateMe(name: string): Promise<MeUser> {
+  return request<MeUser>('/me', { method: 'PATCH', body: JSON.stringify({ name }) })
+}
+
+/** The bookings of the logged-in customer, most recent first in the past scope. */
+export function getMyBookings(scope: MyBookingsScope = 'all'): Promise<MyBooking[]> {
+  return request<MyBooking[]>(`/me/bookings?scope=${scope}`)
+}
+
+/** Cancel one of the bookings of the logged-in customer. */
+export function cancelMyBooking(code: string): Promise<MyBooking> {
+  return request<MyBooking>(`/me/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' })
 }

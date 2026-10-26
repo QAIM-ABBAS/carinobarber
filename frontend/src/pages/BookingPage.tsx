@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import HeroBackground from '../components/HeroBackground'
+import BookingVerifyCard from '../components/BookingVerifyCard'
 import { ArrowStart } from '../components/icons'
 import { currency, manImage, type Service } from '../data/content'
-import { ApiError } from '../lib/api'
+import { ApiError, requestOtp, type OtpRequestResult, type OtpVerifyResult } from '../lib/api'
+import { useAuth } from '../auth/AuthContext'
 import {
   formatTime,
   getBookableDays,
@@ -18,6 +20,9 @@ import { useServices } from '../lib/useServices'
 import '../booking.css'
 
 type Errors = Partial<Record<'service' | 'time' | 'name' | 'phone', string>>
+
+/** The booking flow states: form → (logged out) code request → verify → create. */
+type SubmitStatus = 'idle' | 'submitting' | 'requesting' | 'otp' | 'creating' | 'done'
 
 /** Errors that mean the availability changed and the days have to be reloaded. */
 const RELOAD_AVAILABILITY = new Set([
@@ -76,6 +81,7 @@ function Summary({ service, day, time, className = '' }: SummaryProps) {
 
 export default function BookingPage() {
   const [params] = useSearchParams()
+  const { user, login } = useAuth()
   const { services } = useServices()
   const [days, setDays] = useState<BookableDay[]>([])
   const [daysLoading, setDaysLoading] = useState(true)
@@ -85,12 +91,16 @@ export default function BookingPage() {
   const [serviceId, setServiceId] = useState<string | null>(initialService)
   const [dayIso, setDayIso] = useState<string>('')
   const [time, setTime] = useState<string | null>(null)
-  const [name, setName] = useState('')
+  // Logged-in visitors get their account name as the initial booking name.
+  const [name, setName] = useState(user?.name ?? '')
   const [phone, setPhone] = useState('')
   const [errors, setErrors] = useState<Errors>({})
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
+  const [status, setStatus] = useState<SubmitStatus>('idle')
   const [code, setCode] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // The phone of the ongoing verification and the answer of its request.
+  const [otpPhone, setOtpPhone] = useState('')
+  const [otpInitial, setOtpInitial] = useState<OtpRequestResult | null>(null)
 
   const service = services.find((s) => s.id === serviceId)
   const day = days.find((d) => d.iso === dayIso)
@@ -123,7 +133,8 @@ export default function BookingPage() {
     if (!service) e.service = 'لطفاً یک خدمت انتخاب کنید.'
     if (!time) e.time = 'لطفاً ساعت نوبت را انتخاب کنید.'
     if (name.trim().length < 2) e.name = 'نام و نام خانوادگی را وارد کنید.'
-    if (!normalizePhone(phone)) e.phone = 'شماره موبایل معتبر نیست (مثلاً ۰۹۱۲۱۲۳۴۵۶۷).'
+    // The phone of a logged-in visitor comes from the account, not the form.
+    if (!user && !normalizePhone(phone)) e.phone = 'شماره موبایل معتبر نیست (مثلاً ۰۹۱۲۱۲۳۴۵۶۷).'
     return e
   }
 
@@ -134,43 +145,85 @@ export default function BookingPage() {
     if (el instanceof HTMLInputElement) el.focus({ preventScroll: true })
   }
 
-  const onSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-    const e = validate()
-    setErrors(e)
-    if (Object.keys(e).length) return focusFirst(e)
-
-    setStatus('submitting')
-    setSubmitError(null)
+  /**
+   * Creates the booking after the successful verification (and for logged-in
+   * visitors directly). On a stale-slot error the message of the server is
+   * shown, the availability (step 3) is reloaded and the user is put back on
+   * the form — signed in, so no second code is ever needed for the retry.
+   */
+  const finishBooking = async () => {
     try {
       const res = await submitBooking({
         serviceId: service!.id,
         date: dayIso,
         time: time!,
         name: name.trim(),
-        phone: normalizePhone(phone)!,
       })
       setCode(toFaDigits(res.code))
       setStatus('done')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : GENERIC_ERROR)
-      setStatus('idle')
-      // The slot was taken meanwhile — refresh the availability.
       if (err instanceof ApiError && RELOAD_AVAILABILITY.has(err.code)) {
         setTime(null)
         void loadDays()
+        document.getElementById('step-time')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
+      setStatus('idle')
     }
   }
+
+  const onSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
+    if (status !== 'idle') return
+    const e = validate()
+    setErrors(e)
+    if (Object.keys(e).length) return focusFirst(e)
+    setSubmitError(null)
+
+    // Logged in: the token stands for the phone, no code has to be verified.
+    if (user) {
+      setStatus('submitting')
+      await finishBooking()
+      return
+    }
+
+    // Logged out: a one-time code proves the number; the booking follows after it.
+    const normalized = normalizePhone(phone)!
+    setStatus('requesting')
+    try {
+      const initial = await requestOtp(normalized)
+      setOtpPhone(normalized)
+      setOtpInitial(initial)
+      setStatus('otp')
+    } catch (err) {
+      setSubmitError(err instanceof ApiError ? err.message : GENERIC_ERROR)
+      setStatus('idle')
+    }
+  }
+
+  /** The code was correct — log the visitor in and book without any other step. */
+  const onVerified = (result: OtpVerifyResult) => {
+    login(result.access_token, result.user, result.expires_in)
+    setOtpInitial(null)
+    setOtpPhone('')
+    setSubmitError(null)
+    setStatus('creating')
+    void finishBooking()
+  }
+
+  /** «ویرایش شماره» — back to the form; service/day/time/name/phone all stay. */
+  const backToForm = () => setStatus('idle')
 
   const reset = () => {
     setServiceId(null)
     setTime(null)
-    setName('')
+    setName(user?.name ?? '')
     setPhone('')
     setErrors({})
     setSubmitError(null)
+    setOtpInitial(null)
+    setOtpPhone('')
     setStatus('idle')
   }
 
@@ -204,18 +257,32 @@ export default function BookingPage() {
                 <div><dt>خدمت</dt><dd>{service?.label}</dd></div>
                 <div><dt>زمان</dt><dd>{day?.full}، ساعت {time && formatTime(time)}</dd></div>
                 <div><dt>نام</dt><dd>{name.trim()}</dd></div>
-                <div><dt>موبایل</dt><dd dir="ltr" className="done__ltr">{normalizePhone(phone)}</dd></div>
+                <div><dt>موبایل</dt><dd dir="ltr" className="done__ltr">{user?.phone ?? normalizePhone(phone) ?? ''}</dd></div>
               </dl>
               <div className="done__actions">
                 <Link to="/" className="btn">
                   بازگشت به صفحه اصلی
                   <ArrowStart />
                 </Link>
+                {user && (
+                  <Link to="/account" className="btn">
+                    مشاهده نوبت‌ها در حساب من
+                  </Link>
+                )}
                 <button type="button" className="btn btn--ghost" onClick={reset}>
                   ثبت نوبت جدید
                 </button>
               </div>
             </div>
+          ) : status === 'otp' || status === 'creating' ? (
+            <BookingVerifyCard
+              phone={otpPhone}
+              initial={otpInitial}
+              name={name.trim()}
+              creating={status === 'creating'}
+              onVerified={onVerified}
+              onBack={backToForm}
+            />
           ) : (
             <form className="book__form" onSubmit={onSubmit} noValidate>
               {/* 1 — service */}
@@ -336,24 +403,32 @@ export default function BookingPage() {
                     />
                     {errors.name && <p className="err" id="err-name" role="alert">{errors.name}</p>}
                   </div>
-                  <div className="field">
-                    <label htmlFor="field-phone">شماره موبایل</label>
-                    <input
-                      id="field-phone"
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="۰۹۱۲۱۲۳۴۵۶۷"
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value)
-                        clear('phone')
-                      }}
-                      aria-invalid={!!errors.phone}
-                      aria-describedby={errors.phone ? 'err-phone' : undefined}
-                    />
-                    {errors.phone && <p className="err" id="err-phone" role="alert">{errors.phone}</p>}
-                  </div>
+                  {user ? (
+                    <div className="field">
+                      {/* The phone belongs to the account and is verified by it. */}
+                      <span className="book__phone">شماره شما: <bdi dir="ltr">{toFaDigits(user.phone)}</bdi></span>
+                      <p className="book__hint">این شماره از حساب شما عنوان می‌شود؛ ثبت نوبت بدون کد تأیید انجام می‌شود.</p>
+                    </div>
+                  ) : (
+                    <div className="field">
+                      <label htmlFor="field-phone">شماره موبایل</label>
+                      <input
+                        id="field-phone"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        placeholder="۰۹۱۲۱۲۳۴۵۶۷"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value)
+                          clear('phone')
+                        }}
+                        aria-invalid={!!errors.phone}
+                        aria-describedby={errors.phone ? 'err-phone' : undefined}
+                      />
+                      {errors.phone && <p className="err" id="err-phone" role="alert">{errors.phone}</p>}
+                    </div>
+                  )}
                 </div>
               </fieldset>
 
@@ -361,9 +436,9 @@ export default function BookingPage() {
 
               {submitError && <p className="err err--box" role="alert">{submitError}</p>}
 
-              <button type="submit" className="btn btn--submit" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'در حال ثبت…' : 'ثبت نوبت'}
-                {status !== 'submitting' && <ArrowStart />}
+              <button type="submit" className="btn btn--submit" disabled={status !== 'idle'}>
+                {status === 'submitting' ? 'در حال ثبت…' : status === 'requesting' ? 'در حال ارسال کد…' : 'ثبت نوبت'}
+                {status === 'idle' && <ArrowStart />}
               </button>
             </form>
           )}

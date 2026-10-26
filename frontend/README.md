@@ -6,7 +6,7 @@ React 19 + Vite + TypeScript + Tailwind CSS v4. Persian (fa), RTL, fully respons
     npm run dev      # development
     npm run build    # type-check + production build
     npm run typecheck
-    npm test         # the unit tests of the admin panel (vitest)
+    npm test         # the unit tests, public and admin (vitest)
 
 Layers (back → front): background (z0) → title (z10) → man PNG (z20) → price list (z30) → header (z40).
 Copy, prices and image paths: `src/data/content.ts`. Man cut-out: `public/images/man.png` (+ `.webp`).
@@ -49,7 +49,8 @@ it through `src/lib/api.ts`.
 | Services | `GET /api/v1/services` — the service list with the image gallery (the static data is the fallback) |
 | Media | `/api/v1/media/services/{filename}` — the uploaded service images (served by the API) |
 | Availability | `GET /api/v1/availability` — the days and the free slots |
-| Booking | `POST /api/v1/bookings` — the tracking code is shown on the confirmation screen |
+| Booking | `POST /api/v1/bookings` — the tracking code is shown on the confirmation screen; it **requires a customer token** and carries no phone (`src/lib/api.ts`) |
+| Account | `POST /api/v1/auth/otp/request` + `/auth/otp/verify`, `GET/PATCH /api/v1/me`, `/api/v1/me/bookings` (the customer endpoints of the «حساب») |
 
 The browser only ever calls the relative `/api` path, so the app and the API share one origin and
 no CORS is needed.
@@ -69,6 +70,26 @@ API_PROXY_TARGET=
 
 Start the backend first (`cd .. && docker compose up --build`), otherwise the frontend falls back to
 the static data and shows a retry button on the booking page.
+
+## حساب کاربری (Customer account)
+
+The public app has a customer account (no passwords — phone + one-time code):
+
+- `src/auth/` — the session: `storage.ts` keeps the customer JWT + user in `localStorage`
+  (`gc_customer`, expiry aware), `AuthProvider` exposes `useAuth()` everywhere in the public
+  app and lets the API client attach `Authorization: Bearer …` (a 401 ends the session).
+- `src/components/OtpVerify.tsx` — the shared code step (dev box, resend countdown, Persian
+  digit input with auto-submit, the exact server error texts). `OtpDevBox` next to it is the
+  only consumer of the dev-mode `dev_code` — remove both together with `OTP_DEV_MODE`.
+- `src/account/` + `src/pages/AccountPage.tsx` — the `/account` route: the login card and the
+  logged-in profile, bookings tabs and the cancel dialog (styles in `src/account.css`,
+  `.ac-` prefix).
+- `src/pages/BookingPage.tsx` + `src/components/BookingVerifyCard.tsx` — the booking flow
+  verifies the phone before creating a booking; on `slot_taken` it recovers to step 3 without
+  a second code.
+
+The exact steps to enable a real SMS provider later are documented in the root `README.md`
+(«حساب کاربری» → *Going live with real SMS later*).
 
 ## Docker
 

@@ -15,7 +15,6 @@ export interface BookingPayload {
   /** `HH:mm` (24h) */
   time: string
   name: string
-  phone: string
 }
 
 export interface BookingResult {
@@ -110,14 +109,19 @@ export function getSlots(day: BookableDay): Slot[] {
 
 export const formatTime = (t: string) => toFaDigits(t)
 
-/** Books a slot. Throws an `ApiError` with the Persian message of the server. */
+/**
+ * Books a slot for the logged-in customer (`POST /bookings` requires the
+ * customer token). The caller is responsible for the verification:
+ * `BookingPage` asks logged-out users for an OTP code first (`OtpVerify`) and
+ * only books afterwards — a booking is never created before a verified phone.
+ * Throws an `ApiError` with the Persian message of the server.
+ */
 export async function submitBooking(payload: BookingPayload): Promise<BookingResult> {
   const booking = await createBooking({
     service_id: payload.serviceId,
     date: payload.date,
     time: payload.time,
     name: payload.name,
-    phone: payload.phone,
   })
   return { code: booking.code, status: booking.status }
 }

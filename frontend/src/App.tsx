@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Hero from './components/Hero'
+import AccountPage from './pages/AccountPage'
 import BookingPage from './pages/BookingPage'
 import ServicesPage from './pages/ServicesPage'
 
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/" element={<Hero />} />
         <Route path="/book" element={<BookingPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route
           path="/admin/*"
           element={
