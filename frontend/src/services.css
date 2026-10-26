@@ -35,36 +35,19 @@
 .sv__item {
   position: relative; display: grid; gap: 14px 20px; align-items: center; padding: 26px 8px;
   border-bottom: 1px solid var(--line); transition: background-color 0.3s;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas: "num body" "meta meta" "btn btn";
+  grid-template-columns: 1fr; /* اصلاح شده برای موبایل */
+  grid-template-areas: "media" "body" "meta" "btn";
 }
 .sv__item:hover { background: rgb(255 255 255 / 0.04); }
 .sv__item[data-featured] { background: rgb(189 131 64 / 0.08); }
 .sv__item[data-featured]:hover { background: rgb(189 131 64 / 0.13); }
-.sv__num { grid-area: num; align-self: start; font-family: var(--font-display, "Jomhuria"), sans-serif; font-size: 56px; line-height: 0.75; color: var(--brass); padding-top: 8px; min-width: 2ch; }
+.sv__media { grid-area: media; }
 .sv__body { grid-area: body; min-width: 0; }
 .sv__name { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.5; color: #fff; }
 .sv__badge { padding: 3px 10px; background: var(--brass); color: var(--ink); font-size: 12px; font-weight: 800; }
 .sv__desc { margin: 8px 0 0; max-width: 40em; font-size: 15.5px; line-height: 1.9; color: rgb(241 242 233 / 0.72); }
 .sv__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .sv__tags li { padding: 4px 12px; border: 1px solid var(--line); font-size: 13px; color: rgb(241 242 233 / 0.8); }
-
-/* gallery of the uploaded images (the admin manages it from the panel) */
-.sv__gallery {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px;
-  max-width: 620px; margin: 16px 0 0; padding: 0; list-style: none;
-}
-.sv__gallery a {
-  display: block; aspect-ratio: 4 / 3; overflow: hidden;
-  border: 1px solid var(--line); background: rgb(0 0 0 / 0.28);
-}
-.sv__gallery img {
-  display: block; width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.45s var(--ease, ease), filter 0.45s;
-}
-.sv__gallery a:hover img { transform: scale(1.05); filter: brightness(1.06); }
-.sv__gallery a:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-@media (min-width: 640px) { .sv__gallery { grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)); } }
 
 .sv__meta { grid-area: meta; display: flex; gap: 32px; margin: 0; }
 .sv__meta div { display: grid; gap: 2px; }
@@ -86,11 +69,11 @@
 @media (min-width: 900px) {
   .sv__item {
     padding: 30px 12px; gap: 0 32px;
-    grid-template-columns: 72px minmax(0, 1fr) 170px 120px;
-    grid-template-areas: "num body meta btn";
+    /* اگر خواستید عکس بزرگتر شود، عدد 200px را تغییر دهید */
+    grid-template-columns: 200px minmax(0, 1fr) 170px 120px;
+    grid-template-areas: "media body meta btn"; 
   }
   .sv__meta { flex-direction: column; gap: 12px; }
-  .sv__num { font-size: 64px; }
 }
 
 /* closing call-to-action */
@@ -105,3 +88,93 @@
 }
 @keyframes sv-rise { from { opacity: 0; transform: translateY(22px); } }
 @keyframes sv-man { from { opacity: 0; transform: translateY(40px); } }
+
+/* ───────── Service Carousel ───────── */
+.sv__media {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.sv__carousel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgb(0 0 0 / 0.28);
+}
+
+.sv__carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.sv__carousel-container {
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+}
+
+.sv__carousel-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  aspect-ratio: 4 / 3;
+}
+
+.sv__carousel-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.3s;
+}
+
+.sv__carousel-slide a:hover img {
+  filter: brightness(1.1);
+}
+
+/* دکمه‌های کنترل */
+.sv__carousel-controls {
+  position: absolute;
+  inset-inline: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.sv__carousel-btn {
+  pointer-events: auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--cream);
+  border: 1px solid var(--line);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.sv__carousel-btn:hover:not(:disabled) {
+  background: var(--brass);
+  color: var(--ink);
+  border-color: var(--brass);
+}
+
+.sv__carousel-btn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* مخفی کردن دکمه‌ها در موبایل برای تجربه Swipe بهتر */
+@media (max-width: 899.98px) {
+  .sv__carousel-controls {
+    display: none;
+  }
+  .sv__media {
+    max-width: 100%;
+    margin-bottom: 10px;
+  }
+}

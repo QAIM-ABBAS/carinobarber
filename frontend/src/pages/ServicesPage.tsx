@@ -3,11 +3,9 @@ import Header from '../components/Header'
 import HeroBackground from '../components/HeroBackground'
 import { ArrowStart } from '../components/icons'
 import { currency, manImage } from '../data/content'
-import { mediaUrl } from '../lib/api'
 import { useServices } from '../lib/useServices'
+import ServiceGallery from '../components/ServiceGallery'
 import '../services.css'
-
-const faIndex = (n: number) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
 
 export default function ServicesPage() {
   const { services, details, images } = useServices()
@@ -23,7 +21,14 @@ export default function ServicesPage() {
           <p className="sv__lead">از کوتاهی کلاسیک تا اصلاح با تیغ؛ هر خدمت با دقت، حوصله و محصولات خوب.</p>
           <picture className="sv__man" aria-hidden="true">
             <source srcSet={manImage.webp} type="image/webp" />
-            <img src={manImage.png} alt="" width={manImage.width} height={manImage.height} decoding="async" draggable={false} />
+            <img
+              src={manImage.png}
+              alt=""
+              width={manImage.width}
+              height={manImage.height}
+              decoding="async"
+              draggable={false}
+            />
           </picture>
         </div>
 
@@ -32,9 +37,20 @@ export default function ServicesPage() {
             const d = details[s.id]
             const gallery = images[s.id] ?? []
             return (
-              <li key={s.id} className="sv__item" data-featured={d?.featured || undefined} style={{ ['--i' as string]: i }}>
-                <span className="sv__num" aria-hidden="true">{faIndex(i + 1)}</span>
+              <li
+                key={s.id}
+                className="sv__item"
+                data-featured={d?.featured || undefined}
+                style={{ ['--i' as string]: i }}
+              >
+                {/* ۱. اسلایدر عکس به عنوان فرزند مستقیم li (برای قرارگیری در ستون سمت راست) */}
+                {gallery.length > 0 && (
+                  <div className="sv__media">
+                    <ServiceGallery images={gallery} label={s.label} />
+                  </div>
+                )}
 
+                {/* ۲. متن‌ها */}
                 <div className="sv__body">
                   <h2 className="sv__name">
                     {s.label}
@@ -48,30 +64,20 @@ export default function ServicesPage() {
                       </ul>
                     </>
                   )}
-                  {gallery.length > 0 && (
-                    <ul className="sv__gallery" aria-label={`تصاویر ${s.label}`}>
-                      {gallery.map((src, index) => (
-                        <li key={src}>
-                          <a href={mediaUrl(src)} target="_blank" rel="noreferrer">
-                            <img
-                              src={mediaUrl(src)}
-                              alt={`${s.label} — تصویر ${faIndex(index + 1)}`}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
 
+                {/* ۳. مدت و قیمت */}
                 <dl className="sv__meta">
                   <div><dt>مدت</dt><dd>{d?.duration ?? '—'}</dd></div>
                   <div><dt>تعرفه</dt><dd className="sv__price">{s.price}<small>{currency}</small></dd></div>
                 </dl>
 
-                <Link to={`/book?service=${s.id}`} className="sv__btn" aria-label={`رزرو ${s.label}`}>
+                {/* ۴. دکمه رزرو */}
+                <Link
+                  to={`/book?service=${s.id}`}
+                  className="sv__btn"
+                  aria-label={`رزرو ${s.label}`}
+                >
                   رزرو
                   <ArrowStart />
                 </Link>
