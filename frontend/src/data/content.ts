@@ -26,7 +26,8 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'درباره ما', href: '/#about' },
   { label: 'خدمات', href: '/services' },
-  { label: 'گالری', href: '/#gallery' },
+  // «گالری» — hidden for this release (no gallery section yet); restore for the next one.
+  // { label: 'گالری', href: '/#gallery' },
   { label: 'تماس با ما', href: '/#contact' },
   { label: 'رزرو نوبت', href: '/book' },
   { label: 'حساب', href: '/account' },

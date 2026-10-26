@@ -163,6 +163,93 @@ Checks run after Phase 3: `npm run typecheck` ✅ · `npm test` (92/92 across 13
 `npm run build` ✅ (the first `npm test` attempt hit vitest fork-worker start timeouts under
 machine load from the parallel agent; the rerun of the whole suite was green in 20 s).
 
+### Phase 4 — Polish, a11y, docs and the live whole-stack smoke ✅
+
+Created:
+
+- `frontend/src/lib/otpErrorText.ts` + `otpErrorText.test.ts` (7) — the Persian text of an OTP
+  error (attempts left / `retry_after` / `askName` mapping), making `OtpVerify` ≤ 250 lines.
+- `frontend/src/components/OtpDevBox.tsx` — the dev-mode code box; the only consumer of
+  `dev_code`, so removing `OTP_DEV_MODE` later means deleting one component + one condition.
+- `frontend/src/pages/bookingTestHarness.tsx` (161) + `BookingPage.test.tsx` (143) — split for
+  the 250-line rule (the test file was 286).
+- `frontend/src/lib/apiCore.ts` (97) + `src/lib/customerApi.ts` (103) + slim `api.ts` (100) —
+  the transport / the customer endpoints / the catalogue+facade; `api.ts` re-exports both
+  (`export { ApiError, setUnauthorizedHandler, API_BASE, API_PREFIX } from './apiCore'` and
+  `export * from './customerApi'`), so no importer or test changed and there are no cycles.
+
+Changed:
+
+- `frontend/src/lib/api.ts` + `frontend/src/auth/storage.ts` — **live-bug fix (id types)**:
+  the server serializes `user.id` as a JSON NUMBER, `parseUser` demanded a string, so the
+  first `readSession()` silently dropped the just-saved session, `/me/bookings` went out
+  without a bearer token (401) and the «logged in» look ended as a forced logout. Fixed at
+  the boundary: `normalizeUser`/string-id returns in the API client and accept-and-stringify
+  of numeric ids in `storage.ts` (`parseUser`/`writeSession`/`updatePath`). Regression tests
+  added in `storage.test.ts` + `customerApi.test.ts`.
+- `frontend/src/account/BookingsSection.tsx` — the tab buttons now actually carry
+  `className="ac-tab"` (before, the whole `.ac-tab` CSS was dead), and a real
+  `<h2>«نوبت‌های من»</h2>` sits above the tablist: the logged-in view was H1 → **H3** (skip)
+  and Lighthouse a11y scored 0.98; now H1 → H2 → H3 = **1.0**.
+- `frontend/src/account.css` — `@media (max-width: 480px)` block (compact profile row
+  40/64px, smaller tabs, slimmer cards and dialog).
+- `frontend/src/components/OtpVerify.test.tsx` — executable RTL check: the code input carries
+  `dir="ltr"` and Persian digits `۱۲۴۵۶۳` normalize to `124563`.
+- `README.md` (root) — new «حساب کاربری» section (login flow, dev box, *Going live with real
+  SMS later*, dev-mode + production warning), config rows for `OTP_*`,
+  `CUSTOMER_TOKEN_EXPIRE_DAYS`, `SMS_PROVIDER`, backend test count 185 → 215.
+- `frontend/README.md` — the public-layers/`src/account` section, `npm test` wording, and the
+  API table (customer-token booking without phone, account endpoints row).
+
+Checks after Phase 4: `npm run typecheck` ✅ · `npm test` **103/103 across 14 files** ✅ ·
+`npm run build` ✅ · no public file imports `src/admin/` (grep) · all public sources ≤ 250
+lines except the pre-existing `pages/BookingPage.tsx` (425, grew in phase 3; its test side is
+split off) · Lighthouse (live stack, `:9001`): `/book` **1.0/1.0/1.0**, `/account`
+**1.0/1.0/1.0** (after the heading fix). One transient vitest run showed 1–2 failures under
+parallel machine load; the whole suite on plain reruns was green (see «How to run»).
+
+Live whole-stack smoke (docker compose, API `127.0.0.1:9000`, frontend `:9001`) —
+FINAL CHECKLIST:
+
+1. **Login** — new phone: name asked, dev box with the on-screen code, Persian countdown;
+   re-login of the same phone: no name asked; session persisted, `/me/bookings` 200.
+2. **Logged-out `/book`** — flow with fresh phone (service «اصلاح با تیغ», day, slot):
+   wrong code first → «کد وارد شده نادرست است. (۴ تلاش باقی مانده)» → dev-box fill →
+   auto-verify → login + booking **۶۰۱۰۸۲** created, success screen with
+   «مشاهده نوبت‌ها در حساب من». **Logged-in `/book`**: name prefilled (editable), read-only
+   «شماره شما: ۰۹۱۲۹۰۰۰۰۰۱» (LTR digits), NO code step → booking **۹۷۴۶۸۲**.
+3. **Account bookings** — earlier same session booked «اصلاح و مدل ریش» for Thursday
+   (**۶۴۸۹۳۷**, `can_cancel: true`), cancelled it via ConfirmDialog (title/message/focus ✓,
+   notice «نوبت … لغو شد.»), the card moved to «سابقه نوبت‌ها» with status «لغو شده»; today's
+   10:00 booking correctly shows NO cancel button (inside the server's cancellation window).
+   Server-side: admin API confirms `status: cancelled`. **Observation for the backend agent**:
+   availability still reports the 10:00 slot taken AFTER the cancellation — whether a
+   cancelled booking should free the slot is the backend's policy call; the frontend only
+   displays the server's answer.
+4. **Logout/re-login** — «خروج از حساب» clears `gc_customer`; login with the same phone
+   (no name asked) → same bookings visible (upcoming ۹۷۴۶۸۲, past «لغو شده» ۶۴۸۹۳۷).
+5. **Wrong code** — see item 2.
+6. **Token isolation** (`Invoke-WebRequest` against `:9000`): admin token on `/me` and
+   `/me/bookings` → **401**; customer token on `/admin/bookings` and `/admin/stats/summary`
+   → **401**; customer token on `/me` → 200 (expected). Container env confirmed:
+   `OTP_DEV_MODE=true`, `SMS_PROVIDER=console` (the `false` case is covered by backend tests).
+7. **Admin panel unaffected** — `/admin` login with the root-`.env` credentials lands on
+   «داشبورد» («نوبت‌های امروز», «نوبت‌های پیش‌رو»), admin bundle keeps its own endpoints and
+   session; the customer session in `localStorage` stays intact beside it.
+
+Honest gaps: the 360/768/1280 **visual** record could not be taken at the end — every
+`screenshot` attempt failed with “needs a visible tab” (the browser window was minimized;
+the one successful earlier capture + the media-query block + attribute probes stand as
+evidence). Keyboard traversal via CDP `press` does not move focus (harness constraint), so
+the keyboard pass is a programmatic tabbability audit + the live attribute assertions
+(roving `tabIndex` 0/-1 on the tabs, labeled fields, focus on the dialog confirm button).
+
+Nav «گالری» commented (this release): `content.ts` keeps the item on a commented line with a
+restore note; it feeds both the desktop and the mobile menu, and no other public
+gallery-only code exists (the `sv__`/admin-`ad-` gallery code is the separate service-images
+feature and stays). Suite re-run green afterwards (103/103, typecheck + build ✅; one loaded
+run flaked again and passed on rerun). Nav verified live: 5 items, no «گالری», «حساب» last.
+
 ## Decisions (frontend)
 
 1. **`OtpVerify` props** — the spec's `onVerified(user)` is extended to
@@ -216,6 +303,23 @@ machine load from the parallel agent; the rerun of the whole suite was green in 
 18. **Done-screen phone** — after verification the phone comes from the account
     (`user?.phone`), falling back to `normalizePhone(phone)` for a not-yet-linked legacy
     booking shape; shown `dir="ltr"`.
+19. **Numeric user ids** — the server serializes `user.id` as a number; the frontend
+    normalizes at the API boundary (`customerApi`'s `normalizeUser` + string-id returns of
+    `getMe`/`updateMe`) and defensively in `storage.ts` (accept-and-stringify), because a
+    mismatch silently discarded the session and produced the 401-logout loop. Regression
+    tests pin both sides.
+20. **api.ts is a façade, not a rewrite** — `apiCore.ts` (transport) and `customerApi.ts`
+    (account endpoints) are real modules; `api.ts` re-exports them so existing imports and
+    tests stay untouched and there are no circular imports.
+21. **Signs of DOM truth over raw asserts in the live smoke** — the smoke asserts machine
+    facts (roles, `aria-*`, attributes, network status codes, Persian-visible strings), not
+    pixel positions. Visual evidence stands where the harness allows screenshots; the rest is
+    reported as attribute-level checks.
+22. **Vite-in-container staleness** — the dev server inside docker serves stale transformed
+    modules after source edits (bind mount + transform cache); `docker compose restart
+    frontend` is required after every source change while the container runs.
+23. **«گالری» on hold** — the nav item is commented (not deleted) per the owner's request for
+    this release; restoring means uncommenting one line in `content.ts`.
 
 ## How to run (frontend)
 
@@ -245,13 +349,16 @@ In dev mode the OTP code appears on screen inside the brass dev box.
 
 ## Next
 
-- Phase 4 (frontend): responsive pass (360/768/1280), keyboard/a11y pass (focus order,
-  labels, ConfirmDialog focus trap), RTL check of the OTP input (digits stay LTR inside the
-  box), docs section «حساب کاربری» in the root `README.md` (login, `OTP_DEV_MODE`, exact
-  steps to switch to real SMS; there is no `DEPLOY.md` in the repo), final checks.
-- Then the live whole-stack smoke of the FINAL CHECKLIST items 1–7 — it needs the runtime
-  PostgreSQL on `:5433` (e.g. `docker compose up` for the DB service or an equivalent server;
-  the backend never serves runtime traffic from SQLite).
+All four frontend phases are done and reported; the FINAL CHECKLIST items 1–7 were smoked
+live against the dockerized stack (see Phase 4). Remaining follow-ups (not phases):
+
+- Real SMS provider (backend) + `OTP_DEV_MODE=false` — steps in the root `README.md`
+  («Going live with real SMS later»).
+- «گالری» returns in the next release (uncomment in `src/data/content.ts`; see decision 23).
+- Backend open observation: whether a cancelled booking should free its slot in
+  `/availability` live-smoke (frontend displays the server's answer).
+- The pre-existing `pages/BookingPage.tsx` (425 lines) may be split in trunk for tidiness; no
+  rule violation (it predates the 250-line cap and belongs to the booking phase).
 
 ---
 

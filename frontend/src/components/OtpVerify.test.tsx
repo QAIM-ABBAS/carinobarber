@@ -66,6 +66,16 @@ describe('OtpVerify', () => {
     expect(document.activeElement).toBe(codeInput())
   })
 
+  it('RTL — the digits of the code input stay LTR inside the box', () => {
+    render(<OtpVerify phone="09123456789" initial={REQUESTED} onVerified={() => {}} onBack={() => {}} />)
+
+    // The explicit dir overrides the RTL page direction (digits read LTR in any document).
+    expect(codeInput().getAttribute('dir')).toBe('ltr')
+    // Persian/Arabic digits typed into it are normalized to plain ASCII digits.
+    fireEvent.change(codeInput(), { target: { value: '۱۲۴۵۶۳' } })
+    expect((codeInput() as HTMLInputElement).value).toBe('124563')
+  })
+
   it('shows no dev box when the request carries no dev_code', () => {
     const { dev_code: _, ...withoutCode } = REQUESTED
     render(

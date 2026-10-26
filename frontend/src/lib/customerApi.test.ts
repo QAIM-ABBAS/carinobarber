@@ -4,6 +4,7 @@ import {
   getMe,
   requestOtp,
   setUnauthorizedHandler,
+  updateMe,
   verifyOtp,
 } from './api'
 import { CUSTOMER_STORAGE_KEY, writeSession } from '../auth/storage'
@@ -120,5 +121,29 @@ describe('the public API client with a customer session', () => {
       code: '123456',
       name: 'علی رضایی',
     })
+  })
+
+  it('normalizes a numeric user id of the verify answer to a string', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        access_token: 'token-1',
+        token_type: 'bearer',
+        expires_in: 2_592_000,
+        user: { id: 7, name: 'علی رضایی', phone: '09123456789' },
+      }),
+    )
+
+    const answer = await verifyOtp({ phone: '09123456789', code: '123456' })
+
+    expect(answer.user.id).toBe('7')
+    expect(answer.user.name).toBe('علی رضایی')
+    expect(answer.user.phone).toBe('09123456789')
+  })
+
+  it('normalizes a numeric id of GET /me and PATCH /me as well', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ id: 9, name: 'مریم صادقی', phone: '09120000000' }))
+    expect((await getMe()).id).toBe('9')
+    fetchMock.mockResolvedValue(jsonResponse({ id: 9, name: 'نام تازه', phone: '09120000000' }))
+    expect((await updateMe('نام تازه')).id).toBe('9')
   })
 })
