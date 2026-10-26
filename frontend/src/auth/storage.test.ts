@@ -25,6 +25,24 @@ describe('the customer session', () => {
     expect(readSession(NOW)?.user).toEqual(USER)
   })
 
+  it('normalizes a numeric id to a string (the API serializes the PK as a number)', () => {
+    const session = writeSession(
+      'token-n',
+      { id: 2 as unknown as string, name: 'علی رضایی', phone: '09123456789' },
+      3600,
+      NOW,
+    )
+
+    expect(session.user.id).toBe('2')
+    expect(readSession(NOW)?.user.id).toBe('2')
+    // A value stored with a numeric id stays readable instead of being discarded.
+    window.localStorage.setItem(
+      CUSTOMER_STORAGE_KEY,
+      JSON.stringify({ token: 'token-n', expiresAt: NOW + 60_000, user: { id: 3, name: 'علی رضایی', phone: '09123456789' } }),
+    )
+    expect(readSession(NOW)?.user.id).toBe('3')
+  })
+
   it('keeps a session that is still valid and drops an expired one', () => {
     writeSession('token-123', USER, 60, NOW)
 

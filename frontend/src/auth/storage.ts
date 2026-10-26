@@ -43,11 +43,13 @@ export function isExpired(session: StoredSession, now: number = Date.now()): boo
 /** The stored user must carry all three fields; anything else is a broken value. */
 function parseUser(value: unknown): AuthUser | null {
   if (typeof value !== 'object' || value === null) return null
-  const user = value as Partial<AuthUser>
-  if (typeof user.id !== 'string' || !user.id) return null
+  const user = value as Partial<AuthUser> & { id?: unknown }
+  // The server serializes the primary key as a number — accept both shapes.
+  const id = typeof user.id === 'number' && Number.isFinite(user.id) ? String(user.id) : typeof user.id === 'string' && user.id ? user.id : null
+  if (!id) return null
   if (typeof user.name !== 'string') return null
   if (typeof user.phone !== 'string' || !user.phone) return null
-  return { id: user.id, name: user.name, phone: user.phone }
+  return { id, name: user.name, phone: user.phone }
 }
 
 /** Read the stored session. An expired, broken or incomplete value is removed. */
@@ -92,7 +94,12 @@ export function writeSession(
   expiresInSeconds: number,
   now: number = Date.now(),
 ): StoredSession {
-  const session: StoredSession = { token, expiresAt: now + expiresInSeconds * 1000, user }
+  const session: StoredSession = {
+    token,
+    expiresAt: now + expiresInSeconds * 1000,
+    // The id arrives from the API and may be numeric — normalize it here.
+    user: { id: String(user.id), name: user.name, phone: user.phone },
+  }
   try {
     safeStorage()?.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(session))
   } catch {
@@ -110,7 +117,11 @@ export function updateUser(user: AuthUser): void {
     if (!raw) return
     const parsed = JSON.parse(raw) as Partial<StoredSession>
     if (typeof parsed.token !== 'string' || typeof parsed.expiresAt !== 'number') return
-    const session: StoredSession = { token: parsed.token, expiresAt: parsed.expiresAt, user }
+    const session: StoredSession = {
+      token: parsed.token,
+      expiresAt: parsed.expiresAt,
+      user: { id: String(user.id), name: user.name, phone: user.phone },
+    }
     store.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(session))
   } catch {
     // The storage or the stored JSON is broken — the provider keeps the memory copy.

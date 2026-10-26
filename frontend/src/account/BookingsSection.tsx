@@ -82,10 +82,12 @@ export default function BookingsSection() {
 
   return (
     <div className="ac-bookings-block">
+      <h2 className="ac-bookings__title">نوبت‌های من</h2>
       <div className="ac-tabs" role="tablist" aria-label="نوبت‌های من" ref={tabRef}>
         <button
           type="button"
           role="tab"
+          className="ac-tab"
           id="tab-upcoming"
           aria-selected={tab === 'upcoming'}
           aria-controls="panel-upcoming"
@@ -98,6 +100,7 @@ export default function BookingsSection() {
         <button
           type="button"
           role="tab"
+          className="ac-tab"
           id="tab-past"
           aria-selected={tab === 'past'}
           aria-controls="panel-past"

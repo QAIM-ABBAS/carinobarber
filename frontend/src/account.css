@@ -147,6 +147,8 @@
 /* ───── bookings ───── */
 .ac-stack { display: grid; gap: 26px; align-items: start; }
 .ac-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-top: 0; }
+
+.ac-bookings__title { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--cream); }
 .ac-tab {
   position: relative; padding: 12px 18px; border: 0; background: none; cursor: pointer;
   font: inherit; font-size: 15.5px; font-weight: 600; color: rgb(241 242 233 / 0.65); transition: color 0.2s;
