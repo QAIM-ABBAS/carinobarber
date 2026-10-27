@@ -1,4 +1,5 @@
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import HeroBackground from '../components/HeroBackground'
 import { useAuth } from '../auth/AuthContext'
 import LoginCard from '../account/LoginCard'
@@ -39,6 +40,8 @@ export default function AccountPage() {
           <LoginCard />
         )}
       </div>
+
+      <Footer />
     </section>
   )
 }

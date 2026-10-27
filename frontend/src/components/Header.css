@@ -88,6 +88,10 @@
 .nav-link:hover::after { transform: scaleX(1); }
 .nav-link[aria-current="page"] { color: #fff; }
 .nav-link[aria-current="page"]::after { transform: scaleX(1); }
+/* The admin entry is only rendered for the admin phone (the server verifies it). */
+.nav-link--admin { color: var(--color-brass); }
+.nav-link--admin:hover { color: var(--color-brass-hi); }
+.mobile-menu li a.nav-link--admin { color: var(--color-brass); }
 
 @media (min-width: 1024px) {
   .hero__bar {

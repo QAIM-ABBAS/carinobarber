@@ -7,6 +7,8 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   /** Exchange the credentials for a token and store it. */
   login: (username: string, password: string) => Promise<void>
+  /** Store a token minted by the API (the phone based admin entry). */
+  adoptSession: (token: string, expiresInSeconds: number) => void
   /** Forget the session, clear the cache and go back to the login page. */
   logout: (message?: string) => void
   /** A message for the login page (the session expired, …). */

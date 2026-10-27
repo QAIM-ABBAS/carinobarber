@@ -1,4 +1,5 @@
 import Header from './Header'
+import Footer from './Footer'
 import HeroBackground from './HeroBackground'
 import HeroMan from './HeroMan'
 import HeroTitle from './HeroTitle'
@@ -22,6 +23,7 @@ export default function Hero() {
         <HeroMan />
         <ServicesList />
       </div>
+      <Footer />
     </section>
   )
 }

@@ -31,11 +31,16 @@ src/admin/
 ```
 
 The data comes from the admin endpoints of the API (see [`../backend/README.md`](../backend/README.md)):
-`POST /admin/login`, `GET /admin/stats/summary`, `GET|PATCH /admin/bookings`,
+`POST /admin/login`, `POST /admin/session`, `GET /admin/stats/summary`, `GET|PATCH /admin/bookings`,
 `POST /admin/bookings`, `GET|POST|PATCH|DELETE /admin/services`,
 `POST|DELETE /admin/services/{id}/images`, `GET|PUT /admin/settings` and
 `GET|POST|DELETE /admin/closed-dates`. The hour list of the manual booking form comes from the
 public `GET /availability`.
+
+When the logged-in customer's phone is `ADMIN_PHONE`, the public navbar shows «پنل مدیریت». The
+item links to `/admin/sso`, a small page outside `RequireAuth` that exchanges the customer token
+for an admin token (`POST /admin/session`) and redirects to `/admin`. Opening `/admin` directly
+still shows the normal username/password login.
 
 ## Backend
 

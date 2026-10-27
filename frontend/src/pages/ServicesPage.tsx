@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import HeroBackground from '../components/HeroBackground'
 import { ArrowStart } from '../components/icons'
 import { currency, manImage } from '../data/content'
@@ -94,6 +95,8 @@ export default function ServicesPage() {
           </Link>
         </div>
       </div>
+
+      <Footer />
     </section>
   )
 }

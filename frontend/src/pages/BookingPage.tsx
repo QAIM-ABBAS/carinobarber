@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import HeroBackground from '../components/HeroBackground'
 import BookingVerifyCard from '../components/BookingVerifyCard'
 import { ArrowStart } from '../components/icons'
@@ -452,6 +453,8 @@ export default function BookingPage() {
           </aside>
         </div>
       </div>
+
+      <Footer />
     </section>
   )
 }

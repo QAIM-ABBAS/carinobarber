@@ -72,7 +72,8 @@ export interface MyBooking {
 
 /** Normalizes the returned profile — the server may serialize `id` as a number. */
 function normalizeUser(user: AuthUser): AuthUser {
-  return { id: String(user.id), name: user.name, phone: user.phone }
+  const normalized: AuthUser = { id: String(user.id), name: user.name, phone: user.phone }
+  return user.is_admin === true ? { ...normalized, is_admin: true } : normalized
 }
 
 /**

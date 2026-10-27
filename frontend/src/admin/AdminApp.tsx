@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
 import { ToastProvider } from './components/Toast'
 import AdminLayout from './layout/AdminLayout'
+import AdminSsoPage from './pages/AdminSsoPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import './admin.css'
@@ -51,6 +52,7 @@ export default function AdminApp() {
         <ToastProvider>
           <Routes>
             <Route path="login" element={<LoginPage />} />
+            <Route path="sso" element={<AdminSsoPage />} />
             <Route
               element={
                 <RequireAuth>

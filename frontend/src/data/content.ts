@@ -35,7 +35,7 @@ export const navItems: NavItem[] = [
 
 export const socials = [
   { label: 'اینستاگرام', href: 'https://instagram.com', icon: 'instagram' },
-  { label: 'تیک‌تاک', href: 'https://tiktok.com', icon: 'tiktok' },
+  { label: 'تلگرام', href: 'https://telegram.com', icon: 'telegram' },
 ] as const
 
 export interface Service {

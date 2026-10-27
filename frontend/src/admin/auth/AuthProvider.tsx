@@ -57,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setNotice(null)
   }, [])
 
+  const adoptSession = useCallback((token: string, expiresInSeconds: number) => {
+    setSession(writeSession(token, expiresInSeconds))
+    setNow(Date.now())
+    setNotice(null)
+  }, [])
+
   const clearNotice = useCallback(() => setNotice(null), [])
 
   const isAuthenticated = session !== null && !isExpired(session, now)
@@ -66,11 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token: session?.token ?? null,
       isAuthenticated,
       login,
+      adoptSession,
       logout,
       notice,
       clearNotice,
     }),
-    [session, isAuthenticated, login, logout, notice, clearNotice],
+    [session, isAuthenticated, login, adoptSession, logout, notice, clearNotice],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

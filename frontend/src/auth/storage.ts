@@ -11,6 +11,17 @@ export interface AuthUser {
   id: string
   name: string
   phone: string
+  /**
+   * True when the phone belongs to the shop admin (the server decides; the flag is
+   * only a hint for the UI — every admin request is verified again on the backend).
+   */
+  is_admin?: boolean
+}
+
+/** Keep only the fields the session knows, including the admin flag when set. */
+function storedUser(user: AuthUser): AuthUser {
+  const base: AuthUser = { id: String(user.id), name: user.name, phone: user.phone }
+  return user.is_admin === true ? { ...base, is_admin: true } : base
 }
 
 export interface StoredSession {
@@ -49,7 +60,7 @@ function parseUser(value: unknown): AuthUser | null {
   if (!id) return null
   if (typeof user.name !== 'string') return null
   if (typeof user.phone !== 'string' || !user.phone) return null
-  return { id, name: user.name, phone: user.phone }
+  return storedUser({ id, name: user.name, phone: user.phone, is_admin: user.is_admin === true })
 }
 
 /** Read the stored session. An expired, broken or incomplete value is removed. */
@@ -98,7 +109,7 @@ export function writeSession(
     token,
     expiresAt: now + expiresInSeconds * 1000,
     // The id arrives from the API and may be numeric — normalize it here.
-    user: { id: String(user.id), name: user.name, phone: user.phone },
+    user: storedUser(user),
   }
   try {
     safeStorage()?.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(session))
@@ -120,7 +131,7 @@ export function updateUser(user: AuthUser): void {
     const session: StoredSession = {
       token: parsed.token,
       expiresAt: parsed.expiresAt,
-      user: { id: String(user.id), name: user.name, phone: user.phone },
+      user: storedUser(user),
     }
     store.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(session))
   } catch {

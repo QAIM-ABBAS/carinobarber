@@ -9,8 +9,8 @@ const NAME_RULES = 'نام باید ۲ تا ۱۰۰ حرف باشد.'
 const GENERIC_ERROR = 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'
 
 /**
- * The profile card: avatar with the first letter of the name, inline name edit
- * (`PATCH /me`), the read-only phone and the logout / new-booking actions.
+ * The profile card: inline name edit (`PATCH /me`), the read-only phone and the
+ * logout / new-booking actions.
  */
 export default function ProfileCard() {
   const { user, logout, refreshUser } = useAuth()
@@ -72,9 +72,6 @@ export default function ProfileCard() {
   return (
     <div className="ac-card ac-profile">
       <div className="ac-profile__row">
-        <span className="ac-avatar" aria-hidden="true">
-          {user.name.trim().charAt(0)}
-        </span>
         <span className="ac-profile__label" id="ac-profile-name-label">
           نام
         </span>
@@ -131,7 +128,6 @@ export default function ProfileCard() {
       {saved && !editing && <p className="ac-ok">نام شما ذخیره شد.</p>}
 
       <div className="ac-profile__row">
-        <span className="ac-profile__spacer" aria-hidden="true" />
         <span className="ac-profile__label">موبایل</span>
         <span className="ac-profile__value ac-profile__value--phone">{toFaDigits(user.phone)}</span>
       </div>

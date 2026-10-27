@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { brand, navItems, socials } from '../data/content'
-import { CloseIcon, InstagramIcon, MenuIcon, TikTokIcon } from './icons'
+import { CloseIcon, InstagramIcon, MenuIcon, TelegramIcon } from './icons'
 import './Header.css'
 
-const socialIcons = { instagram: InstagramIcon, tiktok: TikTokIcon }
+const socialIcons = { instagram: InstagramIcon, telegram: TelegramIcon }
+
+/** The extra item of a customer whose verified phone belongs to the admin. */
+const ADMIN_NAV_ITEM = { label: 'پنل مدیریت', href: '/admin/sso' }
 
 function Socials({ className }: { className?: string }) {
   return (
@@ -26,6 +30,9 @@ function Socials({ className }: { className?: string }) {
 export default function Header() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const { user } = useAuth()
+
+  const items = user?.is_admin === true ? [...navItems, ADMIN_NAV_ITEM] : navItems
 
   useEffect(() => {
     if (!open) return
@@ -49,11 +56,11 @@ export default function Header() {
 
         <nav className="hero__nav" aria-label="ناوبری اصلی">
           <ul>
-            {navItems.map((item) => (
+            {items.map((item) => (
               <li key={item.href}>
                 <Link
                   to={item.href}
-                  className="nav-link"
+                  className={`nav-link${item.href === ADMIN_NAV_ITEM.href ? ' nav-link--admin' : ''}`}
                   aria-current={pathname === item.href ? 'page' : undefined}
                 >
                   {item.label}
@@ -79,9 +86,13 @@ export default function Header() {
 
       <div id="mobile-menu" className="mobile-menu" data-open={open} hidden={!open}>
         <ul>
-          {navItems.map((item) => (
+          {items.map((item) => (
             <li key={item.href}>
-              <Link to={item.href} onClick={() => setOpen(false)}>
+              <Link
+                to={item.href}
+                className={item.href === ADMIN_NAV_ITEM.href ? 'nav-link--admin' : undefined}
+                onClick={() => setOpen(false)}
+              >
                 {item.label}
               </Link>
             </li>

@@ -117,14 +117,10 @@
 /* ───── profile card ───── */
 .ac-profile { display: grid; gap: 14px; padding-bottom: 26px; }
 .ac-profile__row {
-  display: grid; grid-template-columns: 46px 78px minmax(0, 1fr) auto; gap: 14px;
+  display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 14px;
   align-items: center; min-height: 62px; border-bottom: 1px solid var(--line);
 }
-.ac-profile__editing { grid-column: 3 / -1; display: flex; gap: 10px; }
-.ac-avatar {
-  flex: none; display: grid; place-items: center; width: 46px; height: 46px;
-  background: var(--brass); color: var(--ink); font-size: 21px; font-weight: 800; line-height: 1;
-}
+.ac-profile__editing { grid-column: 2 / -1; display: flex; gap: 10px; }
 .ac-profile__label { flex: none; width: 76px; font-size: 13.5px; color: rgb(241 242 233 / 0.6); }
 .ac-profile__value { flex: 1; min-width: 0; font-size: 16.5px; color: #fff; overflow-wrap: anywhere; }
 .ac-profile__value--phone { direction: ltr; unicode-bidi: plaintext; text-align: right; }
@@ -133,6 +129,15 @@
 .ac-profile__edit svg { width: 16px; height: 16px; }
 .ac-profile__actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
 .ac-profile__actions .ac-btn { min-height: 46px; }
+
+/* On phones the two actions share one row (they used to wrap under each other). */
+@media (max-width: 600px) {
+  .ac-profile__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ac-profile__actions .ac-btn {
+    width: 100%; min-width: 0; min-height: 44px; padding: 0 10px;
+    font-size: 15px; white-space: nowrap;
+  }
+}
 
 /* inline name editing */
 .ac-profile__editing { display: flex; gap: 10px; flex: 1; }
@@ -143,6 +148,13 @@
 .ac-profile__save:disabled { opacity: 0.55; cursor: progress; }
 .ac-profile__save, .ac-profile__edit { transition: opacity .2s; }
 .ac-profile__save svg, .ac-profile__edit svg { width: 16px; height: 16px; }
+
+/* fix mobile overflow for save button in inline editing */
+@media (max-width: 480px) {
+  .ac-profile__editing { gap: 8px; }
+  .ac-profile__save { width: 36px; height: 36px; }
+  .ac-profile__save svg, .ac-profile__edit svg { width: 14px; height: 14px; }
+}
 
 /* ───── bookings ───── */
 .ac-stack { display: grid; gap: 26px; align-items: start; }
@@ -205,8 +217,7 @@
 @media (max-width: 480px) {
   .ac-card { padding-inline: 18px; }
   .ac-tab { padding-inline: 10px; font-size: 14.5px; }
-  .ac-profile__row { grid-template-columns: 40px 64px minmax(0, 1fr) auto; gap: 10px; }
-  .ac-avatar { width: 40px; height: 40px; font-size: 18px; }
+  .ac-profile__row { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; }
   .ac-profile__label { width: 58px; font-size: 12.5px; }
   .ac-dialog__panel { padding-inline: 18px; }
 }
