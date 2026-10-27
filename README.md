@@ -92,11 +92,21 @@ It is a separate, lazily loaded bundle of the same SPA — the public pages are 
 ```
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me-now
+# optional: the customer phone that may enter the panel without the password
+ADMIN_PHONE=09121234567
 ```
 
 **Changing the password:** edit `ADMIN_PASSWORD` in `.env` and restart the api
 (`docker compose up -d api` or restart uvicorn). The password is hashed with bcrypt on the first
 request of the process — there is no separate user table and no password reset page.
+
+**Phone based entry:** when the phone of the logged-in customer is `ADMIN_PHONE`, the public
+navbar gets a «پنل مدیریت» item. Clicking it exchanges the customer session for an admin token on
+the server (`POST /api/v1/admin/session`); the phone always comes from the verified customer
+account, never from the browser, and a non-admin phone gets a `403`. The admin token is stored in
+`sessionStorage` exactly like the password login. Opening `/admin` **directly** still shows the
+username/password login page — the passwordless entry only runs through `/admin/sso` (the item
+the navbar links to).
 
 The session lives in `sessionStorage` (it ends when the tab is closed) and the admin routes send
 `<meta name="robots" content="noindex">`. If a reverse proxy (nginx or Caddy) sits in front of the
@@ -145,6 +155,11 @@ HMAC hash, and every OTP endpoint is rate limited.
 3. Tune `OTP_TTL_SECONDS`, `OTP_RESEND_SECONDS`, `OTP_MAX_PER_HOUR` and
    `CUSTOMER_TOKEN_EXPIRE_DAYS` (defaults: 120 / 60 / 5 / 30).
 
+> **Deployment docs:** this repository has no `DEPLOY.md` yet — the deployment is exactly
+> what the *Quick start* at the top of this file shows (`cp .env.example .env` → set
+> `SECRET_KEY`/`ADMIN_PASSWORD` → `docker compose up --build`). If a separate deployment
+> guide is added later, link it here.
+
 ## Configuration
 
 `.env` in the repository root configures the whole stack (docker compose, the backend and the vite
@@ -162,6 +177,7 @@ file.
 | `SECRET_KEY` | backend | JWT signing key — at least 32 characters in production |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | backend | Lifetime of the admin token |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | backend | The admin account (hashed with bcrypt) |
+| `ADMIN_PHONE` | backend | Optional verified customer phone that may open the panel without the password |
 | `CORS_ORIGINS` | backend | Comma separated list of allowed origins |
 | `SHOP_TIMEZONE` | backend | Timezone of the shop (`Asia/Tehran`) |
 | `SEED_ON_START` | backend | Seed the services and the shop settings on startup |
