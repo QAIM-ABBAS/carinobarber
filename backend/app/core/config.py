@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from app.core.phone import InvalidPhoneError, normalize_phone
+
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_DIR.parent
 
@@ -42,6 +44,9 @@ class Settings(BaseSettings):
     otp_max_per_hour: int = 5
     admin_username: str = "admin"
     admin_password: str = DEFAULT_ADMIN_PASSWORD
+    #: The verified customer phone that may open the admin panel without a password.
+    #: Empty disables the phone based entry (the password login keeps working).
+    admin_phone: str = ""
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -63,6 +68,24 @@ class Settings(BaseSettings):
         if isinstance(value, (list, tuple)):
             return [str(item).strip() for item in value if str(item).strip()]
         return value
+
+    @field_validator("admin_phone", mode="before")
+    @classmethod
+    def _normalize_admin_phone(cls, value: object) -> object:
+        """Normalize the admin phone and reject an invalid number at startup."""
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            return value
+        raw = value.strip()
+        if not raw:
+            return ""
+        try:
+            return normalize_phone(raw)
+        except InvalidPhoneError as exc:
+            raise ValueError(
+                "ADMIN_PHONE must be a valid Iranian mobile number (e.g. 09121234567)."
+            ) from exc
 
     @property
     def is_production(self) -> bool:

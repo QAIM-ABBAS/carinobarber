@@ -17,6 +17,9 @@ SHOP_TZ = ZoneInfo("Asia/Tehran")
 FIXED_NOW = datetime(2026, 10, 19, 9, 30, tzinfo=SHOP_TZ)
 DEFAULT_CUSTOMER_PHONE = "09121234567"
 DEFAULT_CUSTOMER_NAME = "علی رضایی"
+#: The phone configured as ``ADMIN_PHONE`` in the test settings.
+ADMIN_PHONE = "09129999999"
+ADMIN_NAME = "مدیر باشگاه"
 
 
 class SpySmsProvider(SmsProvider):

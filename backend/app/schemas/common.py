@@ -24,6 +24,7 @@ class ErrorResponse(BaseModel):
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorResponse, "description": "درخواست نامعتبر"},
     401: {"model": ErrorResponse, "description": "دسترسی غیرمجاز"},
+    403: {"model": ErrorResponse, "description": "دسترسی به این بخش مجاز نیست"},
     404: {"model": ErrorResponse, "description": "موردی یافت نشد"},
     409: {"model": ErrorResponse, "description": "تعارض در وضعیت فعلی"},
     422: {"model": ErrorResponse, "description": "اطلاعات نامعتبر"},

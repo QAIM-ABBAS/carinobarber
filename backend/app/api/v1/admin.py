@@ -20,13 +20,20 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_admin, get_current_customer
+from app.core.config import Settings, get_settings
 from app.core.errors import AppError
 from app.core.rate_limit import rate_limit_login
-from app.core.security import build_admin_credentials, create_access_token, verify_admin_login
+from app.core.security import (
+    build_admin_credentials,
+    create_access_token,
+    is_admin_phone,
+    verify_admin_login,
+)
 from app.core.timeutil import get_now
 from app.db.session import get_db
 from app.models.booking import BookingStatus
+from app.models.user import User
 from app.schemas.admin import (
     AdminBookingCreate,
     AdminBookingItem,
@@ -60,6 +67,10 @@ admin_router = APIRouter(
 IMAGE_FILENAME_PATTERN = r"^[a-f0-9]{32}\.(?:jpg|png|webp)$"
 
 
+def _settings(request: Request) -> Settings:
+    return getattr(request.app.state, "settings", None) or get_settings()
+
+
 @admin_router.post(
     "/login",
     response_model=TokenOut,
@@ -88,6 +99,38 @@ def login(
             message="نام کاربری یا رمز عبور نادرست است.",
             status_code=401,
         )
+
+    token, expires_in = create_access_token(credentials.username)
+    return TokenOut(access_token=token, token_type="bearer", expires_in=expires_in)
+
+
+@admin_router.post(
+    "/session",
+    response_model=TokenOut,
+    summary="ورود مدیر از حساب کاربری",
+    responses={403: ERROR_RESPONSES[403]},
+)
+def login_with_customer_account(
+    request: Request,
+    user: User = Depends(get_current_customer),
+) -> TokenOut:
+    """Exchange a verified customer session for an admin token.
+
+    The phone comes from the customer token and its account, never from the request
+    body, and it is compared with ``ADMIN_PHONE`` on the server. A customer whose
+    phone does not belong to the admin gets a 403 and no token.
+    """
+    settings = _settings(request)
+    if not is_admin_phone(user.phone, settings):
+        raise AppError(
+            code="forbidden",
+            message="این حساب کاربری به پنل مدیریت دسترسی ندارد.",
+            status_code=403,
+        )
+
+    credentials = getattr(request.app.state, "admin_credentials", None)
+    if credentials is None:
+        credentials = build_admin_credentials(settings)
 
     token, expires_in = create_access_token(credentials.username)
     return TokenOut(access_token=token, token_type="bearer", expires_in=expires_in)

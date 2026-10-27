@@ -33,11 +33,18 @@ endpoints. The credentials come from the environment of the API:
 ```
 ADMIN_USERNAME=admin          # the user name of the admin
 ADMIN_PASSWORD=change-me-now  # the plain password (hashed with bcrypt on the first request)
+ADMIN_PHONE=09121234567       # optional: the verified customer phone of the admin
 ```
 
 Change the password by editing `ADMIN_PASSWORD` in the `.env` of the repository root and by
 restarting the API — there is no user table and no password reset endpoint. The token lives for
 `ACCESS_TOKEN_EXPIRE_MINUTES` (720 minutes by default).
+
+When `ADMIN_PHONE` is set, `GET /api/v1/me` marks that customer with `is_admin: true` and
+`POST /api/v1/admin/session` can exchange the customer bearer token for an admin token. The phone
+is read from the customer account behind the token (never from the request body) and is compared
+with `ADMIN_PHONE`; any other phone gets `403 forbidden`. A direct call to the other admin
+endpoints still requires an admin token — a customer token is always rejected with `401`.
 
 The endpoints of the panel are listed in [Admin (bearer token)](#admin-bearer-token) below.
 
@@ -114,6 +121,7 @@ The default services and the shop settings are seeded on startup (`SEED_ON_START
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `720` | Lifetime of the admin token |
 | `ADMIN_USERNAME` | `admin` | Admin username |
 | `ADMIN_PASSWORD` | `change-me-now` | Admin password (hashed with bcrypt at startup) |
+| `ADMIN_PHONE` | _(empty)_ | Optional verified customer phone that may open the panel without the password; an invalid number stops the API at startup |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma separated list of allowed origins |
 | `SHOP_TIMEZONE` | `Asia/Tehran` | Timezone used for "today" and for the slot generation |
 | `SEED_ON_START` | `true` | Seed the services and the shop settings on startup |
@@ -146,6 +154,7 @@ shorter than 32 characters, or when `ADMIN_PASSWORD` is the default value.
 | Method | Path | Description |
 | --- | --- | --- |
 | `POST` | `/api/v1/admin/login` | Get an access token (5 attempts per minute and per IP) |
+| `POST` | `/api/v1/admin/session` | Exchange a logged-in customer session of `ADMIN_PHONE` for an admin token (403 for other phones) |
 | `GET` | `/api/v1/admin/services` | All services, including the inactive ones |
 | `POST` | `/api/v1/admin/services` | Create a service |
 | `PATCH` | `/api/v1/admin/services/{id}` | Partial update (the slug is immutable) |
@@ -203,7 +212,8 @@ Validation errors use the code `validation_error` and a `details` list of
 | `booking_not_found` | 404 | Unknown code, or the phone number does not match |
 | `cancel_not_allowed` | 409 | The booking can no longer be cancelled |
 | `rate_limited` | 429 | Too many booking attempts (or login attempts) from this IP |
-| `unauthorized` | 401 | Missing or invalid admin token |
+| `unauthorized` | 401 | Missing or invalid admin/customer token |
+| `forbidden` | 403 | The customer phone is not `ADMIN_PHONE` |
 | `invalid_credentials` | 401 | Wrong admin username or password |
 | `already_exists` | 409 | Duplicate slug or duplicate holiday |
 | `invalid_status_transition` | 409 | The booking status cannot be changed that way |

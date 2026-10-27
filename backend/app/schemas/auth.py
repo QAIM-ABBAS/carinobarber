@@ -56,6 +56,10 @@ class CustomerOut(BaseModel):
     id: int
     name: str
     phone: str = Field(description="شماره موبایل نرمال‌شده")
+    is_admin: bool = Field(
+        default=False,
+        description="آیا این شماره موبایل به پنل مدیریت دسترسی دارد؟",
+    )
     created_at: datetime
 
 

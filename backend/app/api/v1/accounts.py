@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_customer
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import rate_limit_otp_request
-from app.core.security import create_customer_token
+from app.core.security import create_customer_token, is_admin_phone
 from app.core.timeutil import get_now
 from app.db.session import get_db
 from app.models.user import User
@@ -40,6 +40,17 @@ accounts_router = APIRouter(tags=["accounts"])
 
 def _settings(request: Request) -> Settings:
     return getattr(request.app.state, "settings", None) or get_settings()
+
+
+def _customer_out(user: User, settings: Settings) -> CustomerOut:
+    """Build the profile answer, including the admin access of the phone."""
+    return CustomerOut(
+        id=user.id,
+        name=user.name,
+        phone=user.phone,
+        is_admin=is_admin_phone(user.phone, settings),
+        created_at=user.created_at,
+    )
 
 
 def _booking_out(item: CustomerBooking) -> MyBookingOut:
@@ -118,7 +129,7 @@ def verify_otp_endpoint(
     return CustomerTokenOut(
         access_token=token,
         expires_in=expires_in,
-        user=CustomerOut.model_validate(user),
+        user=_customer_out(user, settings),
     )
 
 
@@ -128,9 +139,12 @@ def verify_otp_endpoint(
     summary="پروفایل من",
     responses={401: ERROR_RESPONSES[401]},
 )
-def get_me(user: User = Depends(get_current_customer)) -> CustomerOut:
+def get_me(
+    request: Request,
+    user: User = Depends(get_current_customer),
+) -> CustomerOut:
     """Return the profile of the logged in customer."""
-    return CustomerOut.model_validate(user)
+    return _customer_out(user, _settings(request))
 
 
 @accounts_router.patch(
@@ -141,11 +155,13 @@ def get_me(user: User = Depends(get_current_customer)) -> CustomerOut:
 )
 def update_me(
     payload: CustomerUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_customer),
 ) -> CustomerOut:
     """Update the display name of the logged in customer."""
-    return CustomerOut.model_validate(update_name(db, user, payload.name))
+    updated = update_name(db, user, payload.name)
+    return _customer_out(updated, _settings(request))
 
 
 @accounts_router.get(

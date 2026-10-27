@@ -12,6 +12,7 @@ import jwt
 from jwt import InvalidTokenError
 
 from app.core.config import Settings, get_settings
+from app.core.phone import InvalidPhoneError, normalize_phone
 
 ALGORITHM = "HS256"
 ADMIN_ROLE = "admin"
@@ -71,6 +72,29 @@ def verify_admin_login(credentials: AdminCredentials, username: str, password: s
     username_matches = hmac.compare_digest(credentials.username, username)
     password_matches = verify_password(password, credentials.password_hash)
     return username_matches and password_matches
+
+
+def is_admin_phone(phone: str, settings: Settings | None = None) -> bool:
+    """Return True when the (verified) customer phone belongs to the admin.
+
+    The comparison is done on normalized numbers, so a phone stored in another
+    accepted format can never be mistaken for the admin phone.
+
+    Args:
+        phone: the phone of the logged in customer.
+        settings: the active settings; the cached settings by default.
+
+    Returns:
+        True only when ``ADMIN_PHONE`` is configured and matches ``phone``.
+    """
+    active_settings = settings or get_settings()
+    if not active_settings.admin_phone:
+        return False
+    try:
+        normalized = normalize_phone(phone)
+    except InvalidPhoneError:
+        return False
+    return hmac.compare_digest(normalized, active_settings.admin_phone)
 
 
 def create_access_token(

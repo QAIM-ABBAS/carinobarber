@@ -22,6 +22,7 @@ from app.models.user import User
 from app.seed import seed_database
 from app.services.sms import set_sms_provider
 from tests.helpers import (
+    ADMIN_PHONE,
     FIXED_NOW,
     SpySmsProvider,
     customer_headers_for,
@@ -39,6 +40,7 @@ def settings(tmp_path_factory: pytest.TempPathFactory) -> Settings:
         app_env="test",
         seed_on_start=False,
         rate_limit_bookings_per_minute=5,
+        admin_phone=ADMIN_PHONE,
         cors_origins=["http://testserver"],
         upload_dir=tmp_path_factory.mktemp("uploads"),
     )

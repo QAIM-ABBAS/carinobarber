@@ -48,10 +48,11 @@ def test_me_get_and_patch(
     response = client.get("/api/v1/me", headers=customer_headers)
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"id", "name", "phone", "created_at"}
+    assert set(body) == {"id", "name", "phone", "is_admin", "created_at"}
     assert body["id"] == customer_user.id
     assert body["name"] == customer_user.name
     assert body["phone"] == customer_user.phone
+    assert body["is_admin"] is False
     assert body["created_at"]
 
     updated = client.patch(
