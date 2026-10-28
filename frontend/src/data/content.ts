@@ -34,7 +34,7 @@ export const navItems: NavItem[] = [
 ]
 
 export const socials = [
-  { label: 'اینستاگرام', href: 'https://instagram.com/carino.barber', icon: 'instagram' },
+  { label: 'اینستاگرام', href: 'https://www.instagram.com/hossein_barber_carino', icon: 'instagram' },
   { label: 'تلگرام', href: 'https://t.me/carino_barber', icon: 'telegram' },
 ] as const
 
