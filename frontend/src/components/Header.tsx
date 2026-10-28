@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useState, type MouseEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { brand, navItems, socials } from '../data/content'
 import { CloseIcon, InstagramIcon, MenuIcon, TelegramIcon } from './icons'
@@ -9,6 +9,22 @@ const socialIcons = { instagram: InstagramIcon, telegram: TelegramIcon }
 
 /** The extra item of a customer whose verified phone belongs to the admin. */
 const ADMIN_NAV_ITEM = { label: 'پنل مدیریت', href: '/admin/sso' }
+
+/** Scroll to a footer anchor, waiting a few frames if the home route must render first. */
+function scrollToId(id: string) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  let tries = 0
+  const attempt = () => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+      el.focus({ preventScroll: true })
+      return
+    }
+    if (tries++ < 12) requestAnimationFrame(attempt)
+  }
+  attempt()
+}
 
 function Socials({ className }: { className?: string }) {
   return (
@@ -30,9 +46,19 @@ function Socials({ className }: { className?: string }) {
 export default function Header() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { user } = useAuth()
 
   const items = user?.is_admin === true ? [...navItems, ADMIN_NAV_ITEM] : navItems
+
+  /** «درباره ما» / «تماس با ما» jump to the footer sections, from any page. */
+  const gotoSection = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith('/#')) return
+    e.preventDefault()
+    setOpen(false)
+    navigate(href)
+    scrollToId(href.slice(2))
+  }
 
   useEffect(() => {
     if (!open) return
@@ -62,6 +88,7 @@ export default function Header() {
                   to={item.href}
                   className={`nav-link${item.href === ADMIN_NAV_ITEM.href ? ' nav-link--admin' : ''}`}
                   aria-current={pathname === item.href ? 'page' : undefined}
+                  onClick={(e) => gotoSection(e, item.href)}
                 >
                   {item.label}
                 </Link>
@@ -91,7 +118,7 @@ export default function Header() {
               <Link
                 to={item.href}
                 className={item.href === ADMIN_NAV_ITEM.href ? 'nav-link--admin' : undefined}
-                onClick={() => setOpen(false)}
+                onClick={(e) => gotoSection(e, item.href)}
               >
                 {item.label}
               </Link>

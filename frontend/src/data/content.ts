@@ -34,9 +34,25 @@ export const navItems: NavItem[] = [
 ]
 
 export const socials = [
-  { label: 'اینستاگرام', href: 'https://instagram.com', icon: 'instagram' },
-  { label: 'تلگرام', href: 'https://telegram.com', icon: 'telegram' },
+  { label: 'اینستاگرام', href: 'https://instagram.com/carino.barber', icon: 'instagram' },
+  { label: 'تلگرام', href: 'https://t.me/carino_barber', icon: 'telegram' },
 ] as const
+
+/** Short «about» paragraph shown in the footer. */
+export const aboutText =
+  '«باشگاه جنتلمن‌ها» آرایشگاه مردانه‌ای در دل تهران است؛ جایی برای آراستن با آرامش و سلیقه. ' +
+  'تیم ما سال‌ها تجربه در کوتاهی، اصلاح و مراقبت از مو و پوست دارد و به هر استایل امضای خودش را می‌زند.'
+
+/**
+ * Contact details of the footer.
+ * Placeholders — replace them with the real values here (single source of truth).
+ */
+export const contact = {
+  mobile: { label: '۰۹۱۲ ۳۴۵ ۶۷۸۹', href: 'tel:+989123456789' },
+  landline: { label: '۰۲۱ ۸۸۷۷ ۶۵۴۳', href: 'tel:+982188776543' },
+  email: { label: 'info@carinobarber.ir', href: 'mailto:info@carinobarber.ir' },
+  address: 'تهران، خیابان ولیعصر، بالاتر از پارک ساعی، پلاک ۲۴۷',
+}
 
 export interface Service {
   id: string

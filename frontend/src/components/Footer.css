@@ -1,6 +1,6 @@
 /* ───────────────────────── Footer ─────────────────────────
-   Consistent with the website's brass, cream, and ink theme.
-   RTL-aware layout with "درباره ما" on the right and "تماس با ما" on the left. */
+   Same ink/brass slab as the header menus, on the cream-on-ink theme.
+   RTL: «درباره ما» sits on the right, «تماس با ما» on the left. */
 
 .site-footer {
   position: relative;
@@ -11,78 +11,151 @@
   backdrop-filter: blur(14px);
 }
 
+/* Mobile: the two columns stack (about first, contact below). */
 .site-footer__content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  gap: 30px;
   width: min(720px, calc(100% - 40px));
   margin-inline: auto;
-  padding: 24px 0;
-  gap: 20px;
+  padding: 34px 0 26px;
 }
 
-.site-footer__link {
-  display: inline-block;
-  font-size: 15px;
-  font-weight: 600;
-  color: rgb(241 242 233 / 0.75);
-  transition: color 0.2s, transform 0.3s var(--ease);
-  position: relative;
+/* Jump targets of the nav — focused programmatically, never tabbed into. */
+.site-footer__col {
+  outline: none;
 }
 
-.site-footer__link::after {
+.site-footer__title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-brass);
+}
+/* The short brass rule echoes the nav-link underline. */
+.site-footer__title::after {
   content: "";
-  position: absolute;
-  inset-inline: 0;
-  bottom: -2px;
+  display: block;
+  width: 26px;
   height: 1px;
+  margin-top: 9px;
   background: var(--color-brass);
-  transform: scaleX(0);
-  transition: transform 0.35s var(--ease);
 }
 
-.site-footer__link:hover {
+.site-footer__text {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 2;
+  color: rgb(241 242 233 / 0.72);
+}
+
+.site-footer__list {
+  display: grid;
+  gap: 11px;
+}
+
+.site-footer__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgb(241 242 233 / 0.72);
+  transition: color 0.2s;
+}
+
+a.site-footer__item:hover {
   color: #fff;
 }
-
-.site-footer__link:hover::after {
-  transform: scaleX(1);
+a.site-footer__item:hover .site-footer__icon {
+  color: var(--color-brass-hi);
 }
 
-/* Explicit alignment for RTL */
-.site-footer__link--right {
-  order: 1;
-  text-align: right;
-  transform-origin: right center;
+.site-footer__icon {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  color: var(--color-brass);
+  transition: color 0.2s;
 }
 
-.site-footer__link--left {
-  order: 2;
-  text-align: left;
-  transform-origin: left center;
+/* The address may wrap — align its icon to the first line. */
+.site-footer__item--address {
+  align-items: flex-start;
+}
+.site-footer__item--address .site-footer__icon {
+  margin-top: 4px;
 }
 
-/* Tablet: increase max-width to match content areas */
+.site-footer__address {
+  margin: 0;
+  max-width: 40ch;
+  font-style: normal;
+  line-height: 1.9;
+}
+
+.site-footer__bottom {
+  width: min(720px, calc(100% - 40px));
+  margin-inline: auto;
+  padding: 13px 0 17px;
+  text-align: center;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 12.5px;
+  color: rgb(241 242 233 / 0.45);
+}
+
+/* Tablet: the two columns sit side by side (about → right, contact → left). */
 @media (min-width: 640px) {
   .site-footer__content {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
     width: min(720px, calc(100% - 80px));
-    padding: 28px 0;
+    padding: 40px 0 30px;
   }
-  
-  .site-footer__link {
-    font-size: 16px;
+  .site-footer__bottom {
+    width: min(720px, calc(100% - 80px));
+  }
+  .site-footer__title {
+    font-size: 17px;
+  }
+  .site-footer__text,
+  .site-footer__item {
+    font-size: 15px;
   }
 }
 
-/* Desktop: match the artboard-based layout with --cw */
+/* Desktop: same artboard units and content width as the rest of the page. */
 @media (min-width: 1024px) {
-  .site-footer__content {
+  .site-footer__content,
+  .site-footer__bottom {
     width: var(--cw);
-    padding: calc(var(--u) * 32) 0;
   }
-  
-  .site-footer__link {
-    font-size: calc(var(--u) * 17);
+  .site-footer__content {
+    gap: calc(var(--u) * 70);
+    padding: calc(var(--u) * 38) 0 calc(var(--u) * 28);
+  }
+  .site-footer__title {
+    font-size: calc(var(--u) * 18);
+    margin-bottom: calc(var(--u) * 16);
+  }
+  .site-footer__title::after {
+    width: calc(var(--u) * 26);
+    margin-top: calc(var(--u) * 10);
+  }
+  .site-footer__text,
+  .site-footer__item {
+    font-size: calc(var(--u) * 15);
+  }
+  .site-footer__list {
+    gap: calc(var(--u) * 13);
+  }
+  .site-footer__icon {
+    width: calc(var(--u) * 17);
+    height: calc(var(--u) * 17);
+  }
+  .site-footer__bottom {
+    padding: calc(var(--u) * 15) 0 calc(var(--u) * 18);
+    font-size: calc(var(--u) * 13);
   }
 }
 
