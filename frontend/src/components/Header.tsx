@@ -10,20 +10,28 @@ const socialIcons = { instagram: InstagramIcon, telegram: TelegramIcon }
 /** The extra item of a customer whose verified phone belongs to the admin. */
 const ADMIN_NAV_ITEM = { label: 'پنل مدیریت', href: '/admin/sso' }
 
-/** Scroll to a footer anchor, waiting a few frames if the home route must render first. */
+/**
+ * Scroll to a footer anchor of the *current* page. The footer is rendered on
+ * every public route, so the visitor never loses the page they were on.
+ * Resolves `false` when the anchor is missing (then the caller may navigate).
+ */
 function scrollToId(id: string) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  let tries = 0
-  const attempt = () => {
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
-      el.focus({ preventScroll: true })
-      return
+  return new Promise<boolean>((resolve) => {
+    let tries = 0
+    const attempt = () => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+        el.focus({ preventScroll: true })
+        resolve(true)
+        return
+      }
+      if (tries++ < 12) requestAnimationFrame(attempt)
+      else resolve(false)
     }
-    if (tries++ < 12) requestAnimationFrame(attempt)
-  }
-  attempt()
+    attempt()
+  })
 }
 
 function Socials({ className }: { className?: string }) {
@@ -51,13 +59,18 @@ export default function Header() {
 
   const items = user?.is_admin === true ? [...navItems, ADMIN_NAV_ITEM] : navItems
 
-  /** «تماس با ما» jumps to the footer section, from any page. */
+  /**
+   * «تماس با ما» scrolls to the footer contact section of the page the visitor
+   * is already on (every public page renders the footer). Navigation is only a
+   * fallback for a missing anchor.
+   */
   const gotoSection = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith('/#')) return
     e.preventDefault()
     setOpen(false)
-    navigate(href)
-    scrollToId(href.slice(2))
+    void scrollToId(href.slice(2)).then((found) => {
+      if (!found) navigate(href)
+    })
   }
 
   useEffect(() => {
