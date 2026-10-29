@@ -80,7 +80,7 @@ def test_booking_sends_a_persian_sms(
     assert len(sms_spy.messages) == 1
     phone, text = sms_spy.last_message
     assert phone == PHONE
-    assert "باشگاه جنتلمن‌ها" in text
+    assert "Carino Barber" in text
     assert code in text
     assert TOMORROW in text
     assert "10:00" in text

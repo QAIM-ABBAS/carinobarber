@@ -1,6 +1,6 @@
-# باشگاه جنتلمن‌ها — Gentleman's Club
+# Carino Barber
 
-Website of the barbershop «باشگاه جنتلمن‌ها»: a Persian (fa), RTL single page application with a
+Website of the barbershop «Carino Barber»: a Persian (fa), RTL single page application with a
 FastAPI backend.
 
 ```
@@ -151,7 +151,7 @@ HMAC hash, and every OTP endpoint is rate limited.
 1. Implement a provider class behind the existing `SmsProvider` interface and select it with
    `SMS_PROVIDER` (`console` is the only one shipped today, it only logs the message).
 2. Set `OTP_DEV_MODE=false` — from then on `dev_code` never leaves the API and every code is
-   sent through the provider with the text «کد ورود شما به باشگاه جنتلمن‌ها: 123456».
+   sent through the provider with the text «کد ورود شما به Carino Barber: 123456».
 3. Tune `OTP_TTL_SECONDS`, `OTP_RESEND_SECONDS`, `OTP_MAX_PER_HOUR` and
    `CUSTOMER_TOKEN_EXPIRE_DAYS` (defaults: 120 / 60 / 5 / 30).
 

@@ -75,7 +75,7 @@ def test_dev_mode_false_never_returns_the_code_and_sends_sms(
     assert len(sms_spy.messages) == 1
     phone, text = sms_spy.last_message
     assert phone == PHONE
-    assert "کد ورود شما به باشگاه جنتلمن‌ها:" in text
+    assert "کد ورود شما به Carino Barber:" in text
     assert re.search(r"\d{6}", text)
 
 

@@ -22,8 +22,8 @@ from app.core.security import build_admin_credentials
 
 logger = logging.getLogger("gc")
 
-API_TITLE = "باشگاه جنتلمن‌ها API"
-API_DESCRIPTION = "API برای نمایش خدمات، بررسی نوبت‌های خالی و ثبت/لغو نوبت باشگاه جنتلمن‌ها."
+API_TITLE = "Carino Barber API"
+API_DESCRIPTION = "API برای نمایش خدمات، بررسی نوبت‌های خالی و ثبت/لغو نوبت Carino Barber."
 API_VERSION = "1.0.0"
 LOG_FORMAT = "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
 

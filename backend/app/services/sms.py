@@ -76,14 +76,14 @@ def send_sms_safely(phone: str, text: str) -> None:
 
 def build_otp_message(code: str) -> str:
     """Return the Persian login message that carries the one time code."""
-    return f"کد ورود شما به باشگاه جنتلمن‌ها: {code}"
+    return f"کد ورود شما به Carino Barber: {code}"
 
 
 def build_booking_created_message(code: str, day: str, time: str) -> str:
     """Return the Persian confirmation message of a new booking."""
-    return f"نوبت شما در باشگاه جنتلمن‌ها ثبت شد. کد پیگیری: {code} — روز {day} ساعت {time}"
+    return f"نوبت شما در Carino Barber ثبت شد. کد پیگیری: {code} — روز {day} ساعت {time}"
 
 
 def build_booking_cancelled_message(code: str, day: str, time: str) -> str:
     """Return the Persian cancellation message of a booking."""
-    return f"نوبت شما در باشگاه جنتلمن‌ها لغو شد. کد پیگیری: {code} — روز {day} ساعت {time}"
+    return f"نوبت شما در Carino Barber لغو شد. کد پیگیری: {code} — روز {day} ساعت {time}"

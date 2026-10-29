@@ -1,6 +1,6 @@
-# باشگاه جنتلمن‌ها — Backend
+# Carino Barber — Backend
 
-FastAPI backend for the "Gentleman's Club" barbershop website (باشگاه جنتلمن‌ها).
+FastAPI backend for the "Carino Barber" barbershop website.
 
 | | |
 | --- | --- |

@@ -1,1 +1,1 @@
-"""باشگاه جنتلمن‌ها backend package."""
+"""Carino Barber backend package."""
