@@ -30,12 +30,6 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a className="site-footer__item" href={contact.landline.href}>
-                <PhoneIcon className="site-footer__icon" />
-                <span dir="ltr">{contact.landline.label}</span>
-              </a>
-            </li>
-            <li>
               <a className="site-footer__item" href={contact.email.href}>
                 <MailIcon className="site-footer__icon" />
                 <span dir="ltr">{contact.email.label}</span>
