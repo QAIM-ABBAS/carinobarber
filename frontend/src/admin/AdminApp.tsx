@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
 })
 
 /** The title of the tab while the admin panel is open. */
-const ADMIN_TITLE = 'پنل مدیریت | باشگاه جنتلمن‌ها'
+const ADMIN_TITLE = 'پنل مدیریت | Carino Barber'
 
 /** The admin area of the site: the routes, the session and the query cache. */
 export default function AdminApp() {

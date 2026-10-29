@@ -51,7 +51,7 @@ export default function Header() {
 
   const items = user?.is_admin === true ? [...navItems, ADMIN_NAV_ITEM] : navItems
 
-  /** «درباره ما» / «تماس با ما» jump to the footer sections, from any page. */
+  /** «تماس با ما» jumps to the footer section, from any page. */
   const gotoSection = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith('/#')) return
     e.preventDefault()

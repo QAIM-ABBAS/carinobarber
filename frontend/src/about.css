@@ -1,0 +1,102 @@
+/* ───────── About page ───────── (same tokens as home; relies on the `.hero--page` shell from booking.css) */
+.hero--about {
+  --ab-w: min(1120px, calc(100% - 40px));
+  --line: rgb(255 255 255 / 0.14);
+  --brass: var(--color-brass, #bd8340);
+  --brass-hi: var(--color-brass-hi, #d09849);
+  --cream: var(--color-cream, #f1f2e9);
+  --ink: #1b1a15;
+}
+
+.ab { position: relative; z-index: 10; width: var(--ab-w); margin-inline: auto; padding: 28px 0 80px; }
+
+/* head: giant title on the right, the man on the left (same idea as the services page) */
+.ab__head { position: relative; margin-bottom: 34px; }
+.ab__title {
+  position: relative; z-index: 1; margin: 0;
+  font-family: var(--font-display, "Jomhuria"), sans-serif; font-weight: 400; letter-spacing: 0;
+  font-size: clamp(110px, 24vw, 280px); line-height: 0.7; color: var(--cream);
+}
+.ab__tagline {
+  position: relative; z-index: 3; margin: 16px 0 0;
+  font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; color: var(--brass);
+}
+.ab__tagline::after { content: ""; display: block; width: 44px; height: 2px; margin-top: 14px; background: var(--brass); }
+.ab__man { display: none; pointer-events: none; }
+@media (min-width: 768px) {
+  .ab__head { min-height: 300px; }
+  .ab__man {
+    display: block; position: absolute; z-index: 2; left: -2%; top: -24px; width: min(440px, 42%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 96%);
+            mask-image: linear-gradient(to bottom, #000 58%, transparent 96%);
+  }
+  .ab__man img { display: block; width: 100%; height: auto; }
+}
+@media (min-width: 1024px) { .ab__head { min-height: 330px; margin-bottom: 24px; } .ab__man { width: 430px; top: -36px; } }
+
+/* story */
+.ab__intro { position: relative; z-index: 3; max-width: 46em; }
+.ab__lead { margin: 0 0 14px; font-size: clamp(17px, 1.6vw, 20px); font-weight: 600; line-height: 2; color: #ecece3; }
+.ab__text { margin: 0 0 14px; font-size: 15.5px; line-height: 2; color: rgb(241 242 233 / 0.72); }
+
+/* sections */
+.ab__section { position: relative; z-index: 3; margin-top: 40px; padding-top: 34px; border-top: 1px solid var(--line); }
+.ab__h2 { margin: 0 0 16px; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; line-height: 1.5; color: #fff; }
+
+/* why us — four numbered cards */
+.ab__reasons { display: grid; gap: 14px; margin-top: 22px; grid-template-columns: 1fr; }
+.ab__reason {
+  position: relative; padding: 22px 22px 24px; border: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.03); transition: background-color 0.3s, border-color 0.3s;
+}
+.ab__reason:hover { background: rgb(189 131 64 / 0.08); border-color: rgb(189 131 64 / 0.45); }
+.ab__reason-n {
+  display: block; font-family: var(--font-display, "Jomhuria"), sans-serif; font-weight: 400;
+  font-size: 44px; line-height: 0.7; color: var(--brass);
+}
+.ab__reason-title { margin: 12px 0 6px; font-size: 19px; font-weight: 800; line-height: 1.6; color: #fff; }
+.ab__reason-text { margin: 0; font-size: 14.5px; line-height: 1.9; color: rgb(241 242 233 / 0.7); }
+@media (min-width: 720px) {
+  .ab__reasons { grid-template-columns: 1fr 1fr; gap: 18px; }
+}
+
+/* the experience quote */
+.ab__section--quote { border-top: 0; padding-top: 0; }
+.ab__section--quote .ab__text {
+  margin: 0; padding: 22px 24px; border-inline-start: 3px solid var(--brass);
+  background: rgb(22 23 20 / 0.55); font-size: 16.5px; color: #e6e7dd;
+}
+
+/* closing call to action */
+.ab__cta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;
+  margin-top: 48px; padding: 28px; border: 1px solid var(--line);
+  background: rgb(22 23 20 / 0.6); backdrop-filter: blur(12px);
+}
+.ab__cta-copy { max-width: 42em; }
+.ab__cta-title { margin: 0 0 8px; font-size: clamp(20px, 2.2vw, 26px); font-weight: 800; line-height: 1.5; color: #fff; }
+.ab__cta-text { margin: 0; font-size: 15px; line-height: 1.9; color: rgb(241 242 233 / 0.72); }
+.ab__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 32px;
+  background: var(--brass); border: 1px solid var(--brass); color: var(--ink);
+  font-size: 17px; font-weight: 800; transition: background-color 0.25s, border-color 0.25s;
+}
+.ab__btn svg { width: 18px; height: 18px; transition: transform 0.3s var(--ease, ease); }
+.ab__btn:hover { background: var(--brass-hi); border-color: var(--brass-hi); }
+.ab__btn:hover svg { transform: translateX(-4px); }
+@media (max-width: 639.98px) { .ab__cta .ab__btn { width: 100%; } }
+
+.ab__closing {
+  margin: 44px 0 0; text-align: center;
+  font-family: var(--font-display, "Jomhuria"), sans-serif; font-weight: 400;
+  font-size: clamp(34px, 5vw, 56px); line-height: 1.2; color: var(--brass);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ab__title, .ab__tagline, .ab__intro { animation: ab-rise 0.9s var(--ease, ease) both; }
+  .ab__man { animation: ab-man 1.1s var(--ease, ease) 0.15s both; }
+  .ab__section { animation: ab-rise 0.8s var(--ease, ease) both; }
+  .ab__reason { animation: ab-rise 0.7s var(--ease, ease) both; animation-delay: calc(0.2s + var(--i, 0) * 0.08s); }
+}
+@keyframes ab-rise { from { opacity: 0; transform: translateY(22px); } }
+@keyframes ab-man { from { opacity: 0; transform: translateY(40px); } }

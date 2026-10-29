@@ -49,6 +49,28 @@
   color: rgb(241 242 233 / 0.72);
 }
 
+/* Link to the full «درباره ما» page. */
+.site-footer__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-brass);
+  transition: color 0.2s;
+}
+.site-footer__more::after {
+  content: "←";
+  transition: transform 0.2s;
+}
+.site-footer__more:hover {
+  color: var(--color-brass-hi);
+}
+.site-footer__more:hover::after {
+  transform: translateX(-3px);
+}
+
 .site-footer__list {
   display: grid;
   gap: 11px;
@@ -122,6 +144,9 @@ a.site-footer__item:hover .site-footer__icon {
   .site-footer__item {
     font-size: 15px;
   }
+  .site-footer__more {
+    font-size: 15px;
+  }
 }
 
 /* Desktop: same artboard units and content width as the rest of the page. */
@@ -144,6 +169,10 @@ a.site-footer__item:hover .site-footer__icon {
   }
   .site-footer__text,
   .site-footer__item {
+    font-size: calc(var(--u) * 15);
+  }
+  .site-footer__more {
+    margin-top: calc(var(--u) * 12);
     font-size: calc(var(--u) * 15);
   }
   .site-footer__list {

@@ -57,7 +57,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <ScissorsMark />
           </span>
           <span className="ad-sidebar__brand-text">
-            <strong>باشگاه جنتلمن‌ها</strong>
+            <strong>Carino Barber</strong>
             <small>پنل مدیریت</small>
           </span>
         </div>

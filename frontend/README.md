@@ -1,4 +1,4 @@
-# باشگاه جنتلمن‌ها — Gentleman's Club
+# Carino Barber
 
 React 19 + Vite + TypeScript + Tailwind CSS v4. Persian (fa), RTL, fully responsive.
 
@@ -92,6 +92,9 @@ The public app has a customer account (no passwords — phone + one-time code):
 - `src/pages/BookingPage.tsx` + `src/components/BookingVerifyCard.tsx` — the booking flow
   verifies the phone before creating a booking; on `slot_taken` it recovers to step 3 without
   a second code.
+- `src/pages/AboutPage.tsx` — the `/about` route («درباره ما»): the story, the four reasons to
+  choose the shop and the booking call to action (styles in `src/about.css`, `.ab-` prefix).
+  The copy lives in `aboutPage` in `src/data/content.ts`; the footer links to it.
 
 The exact steps to enable a real SMS provider later are documented in the root `README.md`
 («حساب کاربری» → *Going live with real SMS later*).

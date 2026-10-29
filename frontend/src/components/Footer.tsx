@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { aboutText, brand, contact, socials } from '../data/content'
 import { InstagramIcon, MailIcon, MapPinIcon, MobileIcon, PhoneIcon, TelegramIcon } from './icons'
 import './Footer.css'
@@ -5,8 +6,9 @@ import './Footer.css'
 const socialIcons = { instagram: InstagramIcon, telegram: TelegramIcon }
 
 /**
- * Site footer — the anchors `#about` / `#contact` are the jump targets of the
- * nav. RTL: «درباره ما» sits on the right, «تماس با ما» on the left.
+ * Site footer — `#contact` is the jump target of the nav, `#about` is kept as a
+ * legacy anchor that points to the «درباره ما» page.
+ * RTL: «درباره ما» sits on the right, «تماس با ما» on the left.
  */
 export default function Footer() {
   return (
@@ -15,6 +17,7 @@ export default function Footer() {
         <section id="about" className="site-footer__col" aria-labelledby="footer-about" tabIndex={-1}>
           <h2 id="footer-about" className="site-footer__title">درباره ما</h2>
           <p className="site-footer__text">{aboutText}</p>
+          <Link to="/about" className="site-footer__more">درباره ما بیشتر</Link>
         </section>
 
         <section id="contact" className="site-footer__col" aria-labelledby="footer-contact" tabIndex={-1}>

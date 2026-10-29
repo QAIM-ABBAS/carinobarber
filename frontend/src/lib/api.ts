@@ -1,5 +1,5 @@
 /**
- * Typed client for the public catalogue of the "باشگاه جنتلمن‌ها" API:
+ * Typed client for the public catalogue of the "Carino Barber" API:
  * the services, the availability and the booking creation.
  *
  * The transport lives in `apiCore.ts`, the customer endpoints in
