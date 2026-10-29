@@ -43,11 +43,28 @@
 .menu-btn { display: grid; place-items: center; width: 40px; height: 40px; margin-inline-end: -8px; }
 .menu-btn svg { width: 26px; height: 26px; }
 
+/* Mobile: the burger floats over the page while scrolling, so it is always one
+   tap away — the rest of the bar (logo, border) stays in the page flow. */
+@media (max-width: 1023.98px) {
+  .hero__header { z-index: 60; }
+  .menu-btn {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    inset-inline-end: calc((100vw - var(--cw)) / 2 - 8px);
+    margin-inline-end: 0;
+    border-radius: 999px;
+    background: rgb(22 23 20 / 0.62);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
 .mobile-menu {
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  margin-top: 8px;
+  position: fixed;
+  top: calc(max(14px, env(safe-area-inset-top)) + 48px);
+  inset-inline: max(20px, (100vw - var(--cw)) / 2);
+  margin-top: 0;
   padding: 10px 20px 18px;
   border-radius: 14px;
   background: rgb(22 23 20 / 0.94);
@@ -57,7 +74,11 @@
   animation: menu-in 0.35s var(--ease) both;
 }
 .mobile-menu[hidden] { display: none; }
-.mobile-menu li a { display: block; padding: 13px 0; font-size: 17px; border-bottom: 1px solid rgb(255 255 255 / 0.08); }
+/* Only the nav rows get the full-width row styling — the social links below
+   must keep their fixed 26px box (the row padding would collapse their icon). */
+.mobile-menu > ul:not(.mobile-menu__social) > li > a {
+  display: block; padding: 13px 0; font-size: 17px; border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
 .mobile-menu__social { display: flex; gap: 14px; padding-top: 16px; }
 .social-link { display: grid; place-items: center; width: 22px; height: 22px; transition: color 0.2s, transform 0.3s var(--ease); }
 .social-link:hover { color: var(--color-brass); transform: translateY(-2px); }
@@ -111,6 +132,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .hero__bar { animation: drop 0.8s var(--ease) 0.1s both; }
+  /* Fade only: a transform on the bar would become the containing block of the
+     fixed mobile burger and make it scroll away with the page. */
+  .hero__bar { animation: bar-fade 0.8s var(--ease) 0.1s both; }
 }
-@keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
+@keyframes bar-fade { from { opacity: 0; } }
