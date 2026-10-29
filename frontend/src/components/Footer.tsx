@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { aboutText, brand, contact, socials } from '../data/content'
-import { InstagramIcon, MailIcon, MapPinIcon, MobileIcon, PhoneIcon, TelegramIcon } from './icons'
+import { InstagramIcon, MailIcon, MapPinIcon, MobileIcon, TelegramIcon } from './icons'
 import './Footer.css'
 
 const socialIcons = { instagram: InstagramIcon, telegram: TelegramIcon }
