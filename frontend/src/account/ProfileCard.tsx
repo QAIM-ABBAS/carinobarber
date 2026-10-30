@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { ApiError, updateMe } from '../lib/api'
 import { toFaDigits } from '../lib/booking'
-import { CheckIcon, PencilIcon, XIcon } from '../components/icons'
+import { CheckIcon, PencilIcon } from '../components/icons'
 
 const NAME_RULES = 'نام باید ۲ تا ۱۰۰ حرف باشد.'
 const GENERIC_ERROR = 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'
@@ -69,6 +69,10 @@ export default function ProfileCard() {
     }
   }
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') cancelEdit()
+  }
+
   return (
     <div className="ac-card ac-profile">
       <div className="ac-profile__row">
@@ -83,6 +87,7 @@ export default function ProfileCard() {
               aria-labelledby="ac-profile-name-label"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
               maxLength={100}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'ac-profile-name-error' : undefined}
@@ -90,20 +95,11 @@ export default function ProfileCard() {
             />
             <button
               type="submit"
-              className="ac-profile__save"
+              className="ac-profile__edit ac-profile__edit--save"
               aria-label="ذخیره نام"
               disabled={saving}
             >
               {saving ? <span className="ac-spinner ac-spinner--light" aria-hidden="true" /> : <CheckIcon />}
-            </button>
-            <button
-              type="button"
-              className="ac-profile__edit"
-              aria-label="انصراف از تغییر نام"
-              onClick={cancelEdit}
-              disabled={saving}
-            >
-              <XIcon />
             </button>
           </form>
         ) : (
