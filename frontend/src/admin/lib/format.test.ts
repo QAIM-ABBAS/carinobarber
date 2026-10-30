@@ -10,6 +10,10 @@ import {
   formatNumber,
   formatTime,
   formatToman,
+  isoToJalali,
+  jalaliMonthLength,
+  jalaliToISO,
+  persianWeekdayIndex,
   todayISO,
   toISODate,
   weekdayLabel,
@@ -121,5 +125,44 @@ describe('the calendar helpers', () => {
 
   it('knows today', () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+})
+
+describe('the Jalali calendar', () => {
+  it('turns an ISO date into its Jalali parts', () => {
+    expect(isoToJalali('2026-10-22')).toEqual({ year: 1405, month: 7, day: 30 })
+    expect(isoToJalali('2027-03-21')).toEqual({ year: 1406, month: 1, day: 1 })
+  })
+
+  it('turns the Jalali parts back into the ISO date', () => {
+    expect(jalaliToISO(1405, 7, 30)).toBe('2026-10-22')
+    expect(jalaliToISO(1406, 1, 1)).toBe('2027-03-21')
+  })
+
+  it('knows the length of every month', () => {
+    expect(jalaliMonthLength(1405, 1)).toBe(31)
+    expect(jalaliMonthLength(1405, 7)).toBe(30)
+    expect(jalaliMonthLength(1405, 11)).toBe(30)
+    // اسفند is 30 days in a leap year and 29 otherwise.
+    expect(jalaliMonthLength(1403, 12)).toBe(30)
+    expect(jalaliMonthLength(1405, 12)).toBe(29)
+  })
+
+  it('starts the week on Saturday', () => {
+    // 2026-10-22 is a Thursday → the fifth column (شنبه = 0).
+    expect(persianWeekdayIndex('2026-10-22')).toBe(5)
+    expect(persianWeekdayIndex('2026-10-24')).toBe(0)
+  })
+
+  it('round-trips every day of ten years', () => {
+    for (let year = 1400; year <= 1410; year += 1) {
+      for (let month = 1; month <= 12; month += 1) {
+        const days = jalaliMonthLength(year, month)
+        for (let day = 1; day <= days; day += 1) {
+          const iso = jalaliToISO(year, month, day)
+          expect(isoToJalali(iso)).toEqual({ year, month, day })
+        }
+      }
+    }
   })
 })

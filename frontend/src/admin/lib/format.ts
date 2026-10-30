@@ -83,48 +83,161 @@ export function formatJalaliWeekday(iso: string): string {
   return faDigits(jalaliWeekday.format(parseISODate(iso)))
 }
 
-/**
- * Converts a Jalali date (jY, jM, jD) to a Gregorian ISO string `YYYY-MM-DD`.
- * Pure arithmetic — no library needed.
- * Algorithm: https://www.fourmilab.ch/documents/calendar/
+/*
+ * The Jalali calendar of the panel.
+ *
+ * The conversion is the pure arithmetic of the Persian calendar (the 33-year
+ * cycle, as in `jalaali-js`), so the panel never depends on the ICU data of the
+ * browser: the same day is shown and sent to the API everywhere.
  */
+
+const div = (a: number, b: number) => Math.trunc(a / b)
+const mod = (a: number, b: number) => a - Math.trunc(a / b) * b
+
+/** The years the cycle of the Persian calendar changes (jalaali-js). */
+const BREAKS = [
+  -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262,
+  2324, 2394, 2456, 3178,
+]
+
+interface JalaliYear {
+  /** `0` when the year is a leap year. */
+  leap: number
+  /** The Gregorian year of the 1st of Farvardin. */
+  gy: number
+  /** The day of March of the 1st of Farvardin. */
+  march: number
+}
+
+/** The position of a Jalali year in the cycle (jalaali-js `jalCal`). */
+function jalaliYear(jy: number): JalaliYear {
+  if (jy < BREAKS[0]! || jy >= BREAKS[BREAKS.length - 1]!) {
+    throw new RangeError(`Invalid Jalali year ${jy}`)
+  }
+
+  let leapJ = -14
+  let jp = BREAKS[0]!
+  let jump = 0
+  for (let i = 1; i < BREAKS.length; i += 1) {
+    const jm = BREAKS[i]!
+    jump = jm - jp
+    if (jy < jm) break
+    leapJ += div(jump, 33) * 8 + div(mod(jump, 33), 4)
+    jp = jm
+  }
+
+  let n = jy - jp
+  leapJ += div(n, 33) * 8 + div(mod(n, 33) + 3, 4)
+  if (mod(jump, 33) === 4 && jump - n === 4) leapJ += 1
+
+  const gy = jy + 621
+  const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150
+  const march = 20 + leapJ - leapG
+
+  if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33
+  let leap = mod(mod(n + 1, 33) - 1, 4)
+  if (leap === -1) leap = 4
+
+  return { leap, gy, march }
+}
+
+/** A Gregorian date as a Julian day number. */
+function gregorianToJDN(gy: number, gm: number, gd: number): number {
+  let day =
+    div((gy + div(gm - 8, 6) + 100100) * 1461, 4) +
+    div(153 * mod(gm + 9, 12) + 2, 5) +
+    gd -
+    34840408
+  day = day - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752
+  return day
+}
+
+/** A Julian day number as a Gregorian date. */
+function jdnToGregorian(jdn: number): { gy: number; gm: number; gd: number } {
+  let j = 4 * jdn + 139361631
+  j = j + div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908
+  const i = div(mod(j, 1461), 4) * 5 + 308
+  const gd = div(mod(i, 153), 5) + 1
+  const gm = mod(div(i, 153), 12) + 1
+  const gy = div(j, 1461) - 100100 + div(8 - gm, 6)
+  return { gy, gm, gd }
+}
+
+/** A Jalali date as a Julian day number. */
+function jalaliToJDN(jy: number, jm: number, jd: number): number {
+  const year = jalaliYear(jy)
+  return gregorianToJDN(year.gy, 3, year.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1
+}
+
+/** A Julian day number as a Jalali date. */
+function jdnToJalali(jdn: number): { jy: number; jm: number; jd: number } {
+  const gy = jdnToGregorian(jdn).gy
+  let jy = gy - 621
+  const year = jalaliYear(jy)
+  let k = jdn - gregorianToJDN(gy, 3, year.march)
+
+  if (k >= 0) {
+    if (k <= 185) return { jy, jm: 1 + div(k, 31), jd: mod(k, 31) + 1 }
+    k -= 186
+  } else {
+    jy -= 1
+    k += 179
+    if (year.leap === 1) k += 1
+  }
+
+  return { jy, jm: 7 + div(k, 30), jd: mod(k, 30) + 1 }
+}
+
+const pad2 = (value: number) => String(value).padStart(2, '0')
+
+/** `۱۴۰۵/۰۷/۳۰` → `2026-10-22` (the API keeps the Gregorian date). */
 export function jalaliToISO(jYear: number, jMonth: number, jDay: number): string {
-  // Convert Jalali to Julian Day Number
-  const jy = jYear - 979
-  const jm = jMonth - 1
-  const jd = jDay - 1
-  let jDayNo = 365 * jy + Math.floor(jy / 4) * 8 - Math.floor(jy / 100) + Math.floor(jy / 400)
-  for (let i = 0; i < jm; i++) jDayNo += [31,31,31,31,31,31,30,30,30,30,30,29][i] ?? 0
-  jDayNo += jd
-  // Convert Julian Day Number to Gregorian
-  let gDayNo = jDayNo + 79
-  let gy = 1600 + 400 * Math.floor(gDayNo / 146097)
-  gDayNo = gDayNo % 146097
-  let leap = true
-  if (gDayNo >= 36525) {
-    gDayNo++
-    gy += 100 * Math.floor(gDayNo / 36524)
-    gDayNo = gDayNo % 36524
-    if (gDayNo >= 365) gDayNo++
-    else leap = false
-  }
-  gy += 4 * Math.floor(gDayNo / 1461)
-  gDayNo %= 1461
-  if (gDayNo >= 366) {
-    leap = false
-    gDayNo--
-    gy += Math.floor(gDayNo / 365)
-    gDayNo = gDayNo % 365
-  }
-  const gMonthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  let gm = 0
-  for (gm = 0; gm < 12; gm++) {
-    const d = gMonthDays[gm] ?? 0
-    if (gDayNo < d) break
-    gDayNo -= d
-  }
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${gy}-${pad(gm + 1)}-${pad(gDayNo + 1)}`
+  const { gy, gm, gd } = jdnToGregorian(jalaliToJDN(jYear, jMonth, jDay))
+  return `${gy}-${pad2(gm)}-${pad2(gd)}`
+}
+
+/** The names of the Jalali months (فروردین … اسفند). */
+export const JALALI_MONTHS: readonly string[] = [
+  'فروردین',
+  'اردیبهشت',
+  'خرداد',
+  'تیر',
+  'مرداد',
+  'شهریور',
+  'مهر',
+  'آبان',
+  'آذر',
+  'دی',
+  'بهمن',
+  'اسفند',
+]
+
+/** The three parts of a Jalali date. */
+export interface JalaliParts {
+  year: number
+  month: number
+  day: number
+}
+
+/** `2026-10-22` → `{ year: 1405, month: 7, day: 30 }` */
+export function isoToJalali(iso: string): JalaliParts {
+  const date = parseISODate(iso)
+  const { jy, jm, jd } = jdnToJalali(
+    gregorianToJDN(date.getFullYear(), date.getMonth() + 1, date.getDate()),
+  )
+  return { year: jy, month: jm, day: jd }
+}
+
+/** The number of the days of a Jalali month (۳۱, ۳۰ or ۲۹/۳۰ for اسفند). */
+export function jalaliMonthLength(year: number, month: number): number {
+  if (month <= 6) return 31
+  if (month <= 11) return 30
+  return jalaliYear(year).leap === 0 ? 30 : 29
+}
+
+/** The column of a date in the Persian week (شنبه = 0 … جمعه = 6). */
+export function persianWeekdayIndex(iso: string): number {
+  return (parseISODate(iso).getDay() + 1) % 7
 }
 
 /**
