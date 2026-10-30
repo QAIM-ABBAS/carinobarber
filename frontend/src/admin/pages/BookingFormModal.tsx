@@ -14,7 +14,7 @@ import {
   type BookingFormState,
 } from '../lib/bookingForm'
 import { addDays, faDigits, formatJalali, formatJalaliWeekday, formatTime, formatToman, todayISO } from '../lib/format'
-import JalaliCalendar from '../components/JalaliCalendar'
+import JalaliDatePicker from '../components/JalaliDatePicker'
 import Select from '../components/Select'
 
 export interface BookingFormModalProps {
@@ -145,60 +145,61 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
           />
         </Field>
 
-        <div className="ad-form__full ad-booking-when">
-          <Field
-            label="روز نوبت"
-            htmlFor="booking-date"
-            required
-            error={errors.date}
-            hint={date ? `${formatJalaliWeekday(date)} — ${formatJalali(date)}` : 'روز نوبت را از تقویم انتخاب کنید.'}
-          >
-            <JalaliCalendar
-              id="booking-date"
-              value={date}
-              min={today}
-              max={maxDate}
-              onChange={(iso) => {
-                if (iso !== date) update({ date: iso, time: '' })
-              }}
-            />
-          </Field>
+        <Field
+          label="روز نوبت"
+          htmlFor="booking-date"
+          required
+          error={errors.date}
+          hint={date ? `${formatJalaliWeekday(date)} — ${formatJalali(date)}` : undefined}
+        >
+          <JalaliDatePicker
+            id="booking-date"
+            value={date}
+            min={today}
+            max={maxDate}
+            placeholder="انتخاب روز نوبت"
+            onChange={(iso) => {
+              if (iso !== date) update({ date: iso, time: '' })
+            }}
+            aria-invalid={Boolean(errors.date)}
+          />
+        </Field>
 
-          <Field
-            label="ساعت نوبت"
-            htmlFor="booking-time"
-            required
-            error={errors.time}
-            hint={slots.length > 0 ? 'ساعت‌های رزروشده غیرفعال‌اند.' : undefined}
-          >
-            <div className="ad-slots" id="booking-time" role="group" aria-label="ساعت‌های آزاد">
-              {slots.length > 0 ? (
-                slots.map((slot) => (
-                  <button
-                    type="button"
-                    key={slot.time}
-                    className="ad-slot"
-                    aria-pressed={time === slot.time}
-                    disabled={!slot.available}
-                    onClick={() => update({ time: slot.time })}
-                  >
-                    {formatTime(slot.time)}
-                  </button>
-                ))
-              ) : (
-                <p className="ad-slots__empty">
-                  {!date
-                    ? 'اول روز را از تقویم انتخاب کنید.'
-                    : availability.isFetching
-                      ? 'در حال دریافت ساعت‌های آزاد…'
-                      : day?.closed
-                        ? 'این روز تعطیل است؛ روز دیگری را انتخاب کنید.'
-                        : 'برای این روز ساعت آزادی نمانده است.'}
-                </p>
-              )}
-            </div>
-          </Field>
-        </div>
+        <Field
+          label="ساعت نوبت"
+          htmlFor="booking-time"
+          required
+          error={errors.time}
+          hint={slots.length > 0 ? 'ساعت‌های رزروشده غیرفعال‌اند.' : undefined}
+          className="ad-form__full"
+        >
+          <div className="ad-slots" id="booking-time" role="group" aria-label="ساعت‌های آزاد">
+            {slots.length > 0 ? (
+              slots.map((slot) => (
+                <button
+                  type="button"
+                  key={slot.time}
+                  className="ad-slot"
+                  aria-pressed={time === slot.time}
+                  disabled={!slot.available}
+                  onClick={() => update({ time: slot.time })}
+                >
+                  {formatTime(slot.time)}
+                </button>
+              ))
+            ) : (
+              <p className="ad-slots__empty">
+                {!date
+                  ? 'اول روز را از تقویم انتخاب کنید.'
+                  : availability.isFetching
+                    ? 'در حال دریافت ساعت‌های آزاد…'
+                    : day?.closed
+                      ? 'این روز تعطیل است؛ روز دیگری را انتخاب کنید.'
+                      : 'برای این روز ساعت آزادی نمانده است.'}
+              </p>
+            )}
+          </div>
+        </Field>
 
         <Field label="نام و نام خانوادگی" htmlFor="booking-name" required error={errors.name}>
           <input
