@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -10,6 +11,39 @@ import '../services.css'
 
 export default function ServicesPage() {
   const { services, details, images } = useServices()
+  const listRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    // Only activate on mobile screens
+    if (window.matchMedia('(min-width: 900px)').matches) return
+
+    const items = listRef.current?.querySelectorAll<HTMLLIElement>('.sv__item')
+    if (!items?.length) return
+
+    const activate = () => {
+      const mid = window.innerHeight / 2
+      let closest: HTMLLIElement | null = null
+      let closestDist = Infinity
+
+      items.forEach((item) => {
+        const rect = item.getBoundingClientRect()
+        const visibleRatio = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
+        // only consider items that are at least 70% visible
+        if (visibleRatio / rect.height < 0.7) return
+        const dist = Math.abs((rect.top + rect.bottom) / 2 - mid)
+        if (dist < closestDist) { closestDist = dist; closest = item }
+      })
+
+      items.forEach((item) => {
+        if (item === closest) item.dataset.active = 'true'
+        else delete item.dataset.active
+      })
+    }
+
+    window.addEventListener('scroll', activate, { passive: true })
+    activate() // run once on mount
+    return () => window.removeEventListener('scroll', activate)
+  }, [services])
 
   return (
     <section className="hero hero--page hero--services" aria-labelledby="services-title">
@@ -33,7 +67,7 @@ export default function ServicesPage() {
           </picture>
         </div>
 
-        <ul className="sv__list">
+        <ul className="sv__list" ref={listRef}>
           {services.map((s, i) => {
             const d = details[s.id]
             const gallery = images[s.id] ?? []
