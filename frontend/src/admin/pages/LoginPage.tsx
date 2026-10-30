@@ -57,7 +57,12 @@ export default function LoginPage() {
       <form className="ad-login__card" onSubmit={onSubmit} noValidate>
         <div className="ad-login__brand">
           <span className="ad-logo" aria-hidden="true">
-            <ScissorsMark />
+            <img
+              src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+              alt=""
+              width={40}
+              height={40}
+            />
           </span>
           <h1 className="ad-login__title">ورود به پنل مدیریت</h1>
           <p className="ad-login__lead">برای مدیریت نوبت‌ها، خدمات و تنظیمات باشگاه وارد شوید.</p>

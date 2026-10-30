@@ -6,8 +6,8 @@ import { useMediaQuery } from '../lib/useMediaQuery'
 import {
   CalendarIcon,
   DashboardIcon,
+  HomeIcon,
   LogoutIcon,
-  ScissorsMark,
   ServicesIcon,
   SettingsIcon,
 } from './icons'
@@ -54,7 +54,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="ad-sidebar__brand">
           <span className="ad-logo" aria-hidden="true">
-            <ScissorsMark />
+            <img
+              src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+              alt=""
+              width={40}
+              height={40}
+            />
           </span>
           <span className="ad-sidebar__brand-text">
             <strong>Carino Barber</strong>
@@ -86,6 +91,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="ad-sidebar__foot">
+          <a
+            href="/"
+            className="ad-nav__link"
+            onClick={onClose}
+          >
+            <HomeIcon />
+            <span>صفحه اصلی</span>
+          </a>
           <button type="button" className="ad-logout" onClick={() => logout()}>
             <LogoutIcon />
             <span>خروج از حساب</span>

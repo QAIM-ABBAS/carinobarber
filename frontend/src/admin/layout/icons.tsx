@@ -67,6 +67,16 @@ export function SettingsIcon(props: IconProps) {
   )
 }
 
+/** The house of the home page. */
+export function HomeIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M9 21V12h6v9" />
+    </svg>
+  )
+}
+
 /** The door of the logout. */
 export function LogoutIcon(props: IconProps) {
   return (

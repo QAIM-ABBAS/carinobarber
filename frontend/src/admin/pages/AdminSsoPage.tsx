@@ -77,7 +77,12 @@ export default function AdminSsoPage() {
       <div className="ad-login__card" aria-busy={checking || undefined}>
         <div className="ad-login__brand">
           <span className="ad-logo" aria-hidden="true">
-            <ScissorsMark />
+            <img
+              src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+              alt=""
+              width={40}
+              height={40}
+            />
           </span>
           <h1 className="ad-login__title">ورود به پنل مدیریت</h1>
           {checking && !error && (
