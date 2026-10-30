@@ -37,11 +37,50 @@ const RELOAD_AVAILABILITY = new Set([
 const GENERIC_ERROR = 'ثبت نوبت انجام نشد. لطفاً دوباره تلاش کنید.'
 const DAYS_ERROR = 'دریافت روزهای آزاد ممکن نشد. لطفاً دوباره تلاش کنید.'
 
+const STEP_LABELS = ['خدمت', 'روز', 'ساعت', 'مشخصات']
+const STEP_PERCENTS = [50, 66, 83, 100]
+const TOTAL_STEPS = 4
+
 function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M5 12.5 10 17.5 19 7" />
     </svg>
+  )
+}
+
+interface ProgressBarProps {
+  current: number // 1-indexed
+  total: number
+  labels: string[]
+  percents: number[]
+}
+
+function ProgressBar({ current, total, labels, percents }: ProgressBarProps) {
+  return (
+    <nav className="progress" aria-label="مراحل رزرو">
+      <ol className="progress__steps">
+        {Array.from({ length: total }, (_, i) => {
+          const step = i + 1
+          const done = step < current
+          const active = step === current
+          return (
+            <li
+              key={step}
+              className="progress__step"
+              data-done={done || undefined}
+              data-active={active || undefined}
+              aria-current={active ? 'step' : undefined}
+            >
+              <span className="progress__dot">
+                {done ? <CheckIcon /> : <span>{percents[i]}٪</span>}
+              </span>
+              <span className="progress__label">{labels[i]}</span>
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
   )
 }
 
@@ -92,16 +131,17 @@ export default function BookingPage() {
   const [serviceId, setServiceId] = useState<string | null>(initialService)
   const [dayIso, setDayIso] = useState<string>('')
   const [time, setTime] = useState<string | null>(null)
-  // Logged-in visitors get their account name as the initial booking name.
   const [name, setName] = useState(user?.name ?? '')
   const [phone, setPhone] = useState('')
   const [errors, setErrors] = useState<Errors>({})
   const [status, setStatus] = useState<SubmitStatus>('idle')
   const [code, setCode] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
-  // The phone of the ongoing verification and the answer of its request.
   const [otpPhone, setOtpPhone] = useState('')
   const [otpInitial, setOtpInitial] = useState<OtpRequestResult | null>(null)
+
+  // Current wizard step: 1 = service, 2 = day, 3 = time, 4 = contact
+  const [currentStep, setCurrentStep] = useState(1)
 
   const service = services.find((s) => s.id === serviceId)
   const day = days.find((d) => d.iso === dayIso)
@@ -129,29 +169,32 @@ export default function BookingPage() {
     void loadDays()
   }, [loadDays])
 
-  const validate = (): Errors => {
+  // Scroll to top when switching steps
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
+  const goNext = () => setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS))
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 1))
+
+  const validateStep = (step: number): Errors => {
     const e: Errors = {}
-    if (!service) e.service = 'لطفاً یک خدمت انتخاب کنید.'
-    if (!time) e.time = 'لطفاً ساعت نوبت را انتخاب کنید.'
-    if (name.trim().length < 2) e.name = 'نام و نام خانوادگی را وارد کنید.'
-    // The phone of a logged-in visitor comes from the account, not the form.
-    if (!user && !normalizePhone(phone)) e.phone = 'شماره موبایل معتبر نیست (مثلاً ۰۹۱۲۱۲۳۴۵۶۷).'
+    if (step === 1 && !service) e.service = 'لطفاً یک خدمت انتخاب کنید.'
+    if (step === 3 && !time) e.time = 'لطفاً ساعت نوبت را انتخاب کنید.'
+    if (step === 4) {
+      if (name.trim().length < 2) e.name = 'نام و نام خانوادگی را وارد کنید.'
+      if (!user && !normalizePhone(phone)) e.phone = 'شماره موبایل معتبر نیست (مثلاً ۰۹۱۲۱۲۳۴۵۶۷).'
+    }
     return e
   }
 
-  const focusFirst = (e: Errors) => {
-    const id = e.service ? 'step-service' : e.time ? 'step-time' : e.name ? 'field-name' : 'field-phone'
-    const el = document.getElementById(id)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    if (el instanceof HTMLInputElement) el.focus({ preventScroll: true })
+  const handleNext = () => {
+    const e = validateStep(currentStep)
+    setErrors(e)
+    if (Object.keys(e).length) return
+    goNext()
   }
 
-  /**
-   * Creates the booking after the successful verification (and for logged-in
-   * visitors directly). On a stale-slot error the message of the server is
-   * shown, the availability (step 3) is reloaded and the user is put back on
-   * the form — signed in, so no second code is ever needed for the retry.
-   */
   const finishBooking = async () => {
     try {
       const res = await submitBooking({
@@ -168,7 +211,7 @@ export default function BookingPage() {
       if (err instanceof ApiError && RELOAD_AVAILABILITY.has(err.code)) {
         setTime(null)
         void loadDays()
-        document.getElementById('step-time')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setCurrentStep(3)
       }
       setStatus('idle')
     }
@@ -177,19 +220,17 @@ export default function BookingPage() {
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     if (status !== 'idle') return
-    const e = validate()
+    const e = validateStep(4)
     setErrors(e)
-    if (Object.keys(e).length) return focusFirst(e)
+    if (Object.keys(e).length) return
     setSubmitError(null)
 
-    // Logged in: the token stands for the phone, no code has to be verified.
     if (user) {
       setStatus('submitting')
       await finishBooking()
       return
     }
 
-    // Logged out: a one-time code proves the number; the booking follows after it.
     const normalized = normalizePhone(phone)!
     setStatus('requesting')
     try {
@@ -203,7 +244,6 @@ export default function BookingPage() {
     }
   }
 
-  /** The code was correct — log the visitor in and book without any other step. */
   const onVerified = (result: OtpVerifyResult) => {
     login(result.access_token, result.user, result.expires_in)
     setOtpInitial(null)
@@ -213,7 +253,6 @@ export default function BookingPage() {
     void finishBooking()
   }
 
-  /** «ویرایش شماره» — back to the form; service/day/time/name/phone all stay. */
   const backToForm = () => setStatus('idle')
 
   const reset = () => {
@@ -226,6 +265,7 @@ export default function BookingPage() {
     setOtpInitial(null)
     setOtpPhone('')
     setStatus('idle')
+    setCurrentStep(1)
   }
 
   const clear = (k: keyof Errors) => setErrors((prev) => ({ ...prev, [k]: undefined }))
@@ -285,163 +325,186 @@ export default function BookingPage() {
               onBack={backToForm}
             />
           ) : (
-            <form className="book__form" onSubmit={onSubmit} noValidate>
-              {/* 1 — service */}
-              <fieldset className="step" id="step-service" tabIndex={-1} aria-describedby={errors.service ? 'err-service' : undefined}>
-                <legend><span className="step__n">۱</span>انتخاب خدمت</legend>
-                <div className="opts">
-                  {services.map((s) => (
-                    <label key={s.id} className="opt">
-                      <input
-                        type="radio"
-                        name="service"
-                        value={s.id}
-                        checked={serviceId === s.id}
-                        onChange={() => {
-                          setServiceId(s.id)
-                          clear('service')
-                        }}
-                      />
-                      <span className="opt__body">
-                        <span className="opt__dot" aria-hidden="true" />
-                        <span className="opt__label">{s.label}</span>
-                        <span className="opt__price">
-                          {s.price}
-                          <small>{currency}</small>
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {errors.service && <p className="err" id="err-service" role="alert">{errors.service}</p>}
-              </fieldset>
+            <div className="book__wizard">
+              <ProgressBar current={currentStep} total={TOTAL_STEPS} labels={STEP_LABELS} percents={STEP_PERCENTS} />
 
-              {/* 2 — day */}
-              <fieldset className="step">
-                <legend><span className="step__n">۲</span>انتخاب روز</legend>
-                {daysLoading ? (
-                  <p className="muted">در حال دریافت روزهای آزاد…</p>
-                ) : daysError ? (
-                  <p className="err err--box" role="alert">
-                    {daysError}{' '}
-                    <button type="button" className="btn btn--ghost" onClick={() => void loadDays()}>
-                      تلاش دوباره
+              <form className="book__form" onSubmit={onSubmit} noValidate>
+
+                {/* Step 1 — service */}
+                {currentStep === 1 && (
+                  <fieldset className="step" id="step-service">
+                    <div className="opts">
+                      {services.map((s) => (
+                        <label key={s.id} className="opt">
+                          <input
+                            type="radio"
+                            name="service"
+                            value={s.id}
+                            checked={serviceId === s.id}
+                            onChange={() => {
+                              setServiceId(s.id)
+                              clear('service')
+                            }}
+                          />
+                          <span className="opt__body">
+                            <span className="opt__dot" aria-hidden="true" />
+                            <span className="opt__label">{s.label}</span>
+                            <span className="opt__price">
+                              {s.price}
+                              <small>{currency}</small>
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    {errors.service && <p className="err" id="err-service" role="alert">{errors.service}</p>}
+                  </fieldset>
+                )}
+
+                {/* Step 2 — day */}
+                {currentStep === 2 && (
+                  <fieldset className="step">
+                    {daysLoading ? (
+                      <p className="muted">در حال دریافت روزهای آزاد…</p>
+                    ) : daysError ? (
+                      <p className="err err--box" role="alert">
+                        {daysError}{' '}
+                        <button type="button" className="btn btn--ghost" onClick={() => void loadDays()}>
+                          تلاش دوباره
+                        </button>
+                      </p>
+                    ) : (
+                      <div className="days">
+                        {days.map((d) => (
+                          <label key={d.iso} className="day">
+                            <input
+                              type="radio"
+                              name="day"
+                              value={d.iso}
+                              disabled={!d.available}
+                              checked={dayIso === d.iso}
+                              onChange={() => {
+                                setDayIso(d.iso)
+                                setTime(null)
+                              }}
+                            />
+                            <span className="day__body">
+                              <span className="day__wd">{d.weekday}</span>
+                              <span className="day__n">{d.day}</span>
+                              <span className="day__m">{d.closed ? 'تعطیل' : !d.available ? 'تکمیل' : d.month}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </fieldset>
+                )}
+
+                {/* Step 3 — time */}
+                {currentStep === 3 && (
+                  <fieldset className="step" id="step-time">
+                    {daysLoading ? (
+                      <p className="muted">در حال دریافت ساعت‌های آزاد…</p>
+                    ) : day?.closed ? (
+                      <p className="muted">این روز باشگاه تعطیل است؛ روز دیگری را انتخاب کنید.</p>
+                    ) : (
+                      <div className="slots">
+                        {slots.map((s) => (
+                          <label key={s.time} className="slot">
+                            <input
+                              type="radio"
+                              name="time"
+                              value={s.time}
+                              disabled={s.disabled}
+                              checked={time === s.time}
+                              onChange={() => {
+                                setTime(s.time)
+                                clear('time')
+                              }}
+                            />
+                            <span className="slot__body">{formatTime(s.time)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {errors.time && <p className="err" id="err-time" role="alert">{errors.time}</p>}
+                  </fieldset>
+                )}
+
+                {/* Step 4 — contact */}
+                {currentStep === 4 && (
+                  <fieldset className="step">
+                    <div className="fields">
+                      <div className="field">
+                        <label htmlFor="field-name">نام و نام خانوادگی</label>
+                        <input
+                          id="field-name"
+                          type="text"
+                          autoComplete="name"
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value)
+                            clear('name')
+                          }}
+                          aria-invalid={!!errors.name}
+                          aria-describedby={errors.name ? 'err-name' : undefined}
+                        />
+                        {errors.name && <p className="err" id="err-name" role="alert">{errors.name}</p>}
+                      </div>
+                      {user ? (
+                        <div className="field">
+                          <span className="book__phone">شماره شما: <bdi dir="ltr">{toFaDigits(user.phone)}</bdi></span>
+                          <p className="book__hint">این شماره از حساب شما عنوان می‌شود؛ ثبت نوبت بدون کد تأیید انجام می‌شود.</p>
+                        </div>
+                      ) : (
+                        <div className="field">
+                          <label htmlFor="field-phone">شماره موبایل</label>
+                          <input
+                            id="field-phone"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            placeholder="۰۹۱۲۱۲۳۴۵۶۷"
+                            value={phone}
+                            onChange={(e) => {
+                              setPhone(e.target.value)
+                              clear('phone')
+                            }}
+                            aria-invalid={!!errors.phone}
+                            aria-describedby={errors.phone ? 'err-phone' : undefined}
+                          />
+                          {errors.phone && <p className="err" id="err-phone" role="alert">{errors.phone}</p>}
+                        </div>
+                      )}
+                    </div>
+
+                    <Summary service={service} day={day} time={time} className="summary--inline" />
+                    {submitError && <p className="err err--box" role="alert">{submitError}</p>}
+                  </fieldset>
+                )}
+
+                {/* Navigation buttons */}
+                <div className="step__nav">
+                  {currentStep > 1 && (
+                    <button type="button" className="btn btn--ghost" onClick={goBack}>
+                      بازگشت
                     </button>
-                  </p>
-                ) : (
-                  <div className="days">
-                    {days.map((d) => (
-                      <label key={d.iso} className="day">
-                        <input
-                          type="radio"
-                          name="day"
-                          value={d.iso}
-                          disabled={!d.available}
-                          checked={dayIso === d.iso}
-                          onChange={() => {
-                            setDayIso(d.iso)
-                            setTime(null)
-                          }}
-                        />
-                        <span className="day__body">
-                          <span className="day__wd">{d.weekday}</span>
-                          <span className="day__n">{d.day}</span>
-                          <span className="day__m">{d.closed ? 'تعطیل' : !d.available ? 'تکمیل' : d.month}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-
-              {/* 3 — time */}
-              <fieldset className="step" id="step-time" tabIndex={-1} aria-describedby={errors.time ? 'err-time' : undefined}>
-                <legend><span className="step__n">۳</span>انتخاب ساعت</legend>
-                {daysLoading ? (
-                  <p className="muted">در حال دریافت ساعت‌های آزاد…</p>
-                ) : day?.closed ? (
-                  <p className="muted">این روز باشگاه تعطیل است؛ روز دیگری را انتخاب کنید.</p>
-                ) : (
-                  <div className="slots">
-                    {slots.map((s) => (
-                      <label key={s.time} className="slot">
-                        <input
-                          type="radio"
-                          name="time"
-                          value={s.time}
-                          disabled={s.disabled}
-                          checked={time === s.time}
-                          onChange={() => {
-                            setTime(s.time)
-                            clear('time')
-                          }}
-                        />
-                        <span className="slot__body">{formatTime(s.time)}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                {errors.time && <p className="err" id="err-time" role="alert">{errors.time}</p>}
-              </fieldset>
-
-              {/* 4 — contact */}
-              <fieldset className="step">
-                <legend><span className="step__n">۴</span>مشخصات شما</legend>
-                <div className="fields">
-                  <div className="field">
-                    <label htmlFor="field-name">نام و نام خانوادگی</label>
-                    <input
-                      id="field-name"
-                      type="text"
-                      autoComplete="name"
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value)
-                        clear('name')
-                      }}
-                      aria-invalid={!!errors.name}
-                      aria-describedby={errors.name ? 'err-name' : undefined}
-                    />
-                    {errors.name && <p className="err" id="err-name" role="alert">{errors.name}</p>}
-                  </div>
-                  {user ? (
-                    <div className="field">
-                      {/* The phone belongs to the account and is verified by it. */}
-                      <span className="book__phone">شماره شما: <bdi dir="ltr">{toFaDigits(user.phone)}</bdi></span>
-                      <p className="book__hint">این شماره از حساب شما عنوان می‌شود؛ ثبت نوبت بدون کد تأیید انجام می‌شود.</p>
-                    </div>
+                  )}
+                  {currentStep < TOTAL_STEPS ? (
+                    <button type="button" className="btn btn--next" onClick={handleNext}>
+                      مرحله بعد
+                      <ArrowStart />
+                    </button>
                   ) : (
-                    <div className="field">
-                      <label htmlFor="field-phone">شماره موبایل</label>
-                      <input
-                        id="field-phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="۰۹۱۲۱۲۳۴۵۶۷"
-                        value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value)
-                          clear('phone')
-                        }}
-                        aria-invalid={!!errors.phone}
-                        aria-describedby={errors.phone ? 'err-phone' : undefined}
-                      />
-                      {errors.phone && <p className="err" id="err-phone" role="alert">{errors.phone}</p>}
-                    </div>
+                    <button type="submit" className="btn btn--submit" disabled={status !== 'idle'}>
+                      {status === 'submitting' ? 'در حال ثبت…' : status === 'requesting' ? 'در حال ارسال کد…' : 'ثبت نوبت'}
+                      {status === 'idle' && <ArrowStart />}
+                    </button>
                   )}
                 </div>
-              </fieldset>
 
-              <Summary service={service} day={day} time={time} className="summary--inline" />
-
-              {submitError && <p className="err err--box" role="alert">{submitError}</p>}
-
-              <button type="submit" className="btn btn--submit" disabled={status !== 'idle'}>
-                {status === 'submitting' ? 'در حال ثبت…' : status === 'requesting' ? 'در حال ارسال کد…' : 'ثبت نوبت'}
-                {status === 'idle' && <ArrowStart />}
-              </button>
-            </form>
+              </form>
+            </div>
           )}
 
           <aside className="book__aside" aria-label="خلاصه رزرو">
