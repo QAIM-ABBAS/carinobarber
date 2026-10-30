@@ -110,4 +110,10 @@ export const services: Service[] = [
 /** Row that shows the "book" CTA by default (matches the reference design). */
 export const defaultActiveService = 'facial'
 
+/**
+ * Rows the home-page price list shows before it starts scrolling inside
+ * itself. Six is the artboard ceiling: six rows end just under the title.
+ */
+export const homeServiceRows = 6
+
 export const bookLabel = 'رزرو'

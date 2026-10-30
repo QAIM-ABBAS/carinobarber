@@ -1,20 +1,28 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { bookLabel, currency, defaultActiveService } from '../data/content'
+import { bookLabel, currency, defaultActiveService, homeServiceRows } from '../data/content'
 import { useServices } from '../lib/useServices'
 import { ArrowStart } from './icons'
 
 /**
  * Price list with simple hover effect.
  * Reserve and services buttons are shown after the list.
+ * More than `homeServiceRows` services scroll inside the list, so the CTA row
+ * and the rest of the hero never move.
  */
 export default function ServicesList() {
   const { services } = useServices()
-  const [active, setActive] = useState(defaultActiveService)
+  const [active] = useState(defaultActiveService)
 
   return (
     <div>
-      <ul id="services" className="hero__list" aria-label="خدمات و تعرفه‌ها">
+      <ul
+        id="services"
+        className="hero__list"
+        aria-label="خدمات و تعرفه‌ها"
+        style={{ ['--visible-rows' as string]: homeServiceRows }}
+        tabIndex={services.length > homeServiceRows ? 0 : undefined}
+      >
         {services.map((s, i) => {
           return (
             <li key={s.id} className="service" style={{ ['--i' as string]: i }}>
