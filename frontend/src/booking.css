@@ -111,7 +111,7 @@
 /* buttons */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; padding: 0 28px;
-  background: var(--brass); color: var(--ink); border: 1px solid var(--brass);
+  background: var(--brass); color: var(--ink); border: 1px solid var(--brass); border-radius: 8px;
   font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; transition: background-color 0.2s, transform 0.3s var(--ease, ease), opacity 0.2s;
 }
 .btn:hover { background: var(--brass-hi); }
@@ -176,3 +176,91 @@
 }
 @keyframes bk-rise { from { opacity: 0; transform: translateY(18px); } }
 @keyframes bk-man { from { opacity: 0; transform: translateY(36px); } }
+
+/* ───────── Wizard progress bar ───────── */
+.book__wizard { display: flex; flex-direction: column; gap: 0; }
+
+.progress { margin-bottom: 32px; }
+.progress__steps {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* the connector line lives as a ::after on each step except the last */
+.progress__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  flex: 1;
+}
+.progress__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 20px; /* vertically center on the dot */
+  /* start after the dot center, end before the next dot center */
+  inset-inline-start: calc(50% + 20px);
+  inset-inline-end: calc(-50% + 20px);
+  height: 1px;
+  background: rgb(255 255 255 / 0.2);
+  transition: background 0.3s;
+}
+.progress__step[data-done]::after {
+  background: var(--brass);
+}
+
+.progress__dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgb(255 255 255 / 0.25);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(241 242 233 / 0.5);
+  transition: all 0.3s;
+  position: relative;
+  z-index: 1;
+}
+.progress__dot svg { width: 14px; height: 14px; }
+
+.progress__step[data-active] .progress__dot {
+  border-color: var(--brass);
+  background: var(--brass);
+  color: var(--ink);
+}
+.progress__step[data-done] .progress__dot {
+  border-color: var(--brass);
+  background: var(--brass);
+  color: var(--ink);
+}
+
+.progress__label {
+  font-size: 11.5px;
+  color: rgb(241 242 233 / 0.45);
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+.progress__step[data-active] .progress__label { color: var(--cream); font-weight: 600; }
+.progress__step[data-done] .progress__label { color: rgb(241 242 233 / 0.7); }
+
+/* ───────── Step navigation (back / next) ───────── */
+.step__nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.btn--next { flex: 1; }
+.btn--submit { flex: 1; }
+@media (min-width: 640px) {
+  .btn--next, .btn--submit { flex: none; min-width: 200px; }
+}

@@ -78,7 +78,7 @@
 .ab__cta-text { margin: 0; font-size: 15px; line-height: 1.9; color: rgb(241 242 233 / 0.72); }
 .ab__btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 32px;
-  background: var(--brass); border: 1px solid var(--brass); color: var(--ink);
+  background: var(--brass); border: 1px solid var(--brass); color: var(--ink); border-radius: 8px;
   font-size: 17px; font-weight: 800; transition: background-color 0.25s, border-color 0.25s;
 }
 .ab__btn svg { width: 18px; height: 18px; transition: transform 0.3s var(--ease, ease); }

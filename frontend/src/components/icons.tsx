@@ -15,18 +15,39 @@ export function ScissorsMark(props: IconProps) {
 
 export function InstagramIcon(props: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
-      <rect x="3" y="3" width="18" height="18" rx="5.2" />
-      <circle cx="12" cy="12" r="4.1" />
-      <circle cx="17.3" cy="6.7" r="1.05" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 512 512" aria-hidden="true" {...props}>
+      <rect width="512" height="512" rx="15%" id="ig-b" />
+      <use fill="url(#ig-a)" href="#ig-b" />
+      <use fill="url(#ig-c)" href="#ig-b" />
+      <radialGradient id="ig-a" cx=".4" cy="1" r="1">
+        <stop offset=".1" stopColor="#fd5" />
+        <stop offset=".5" stopColor="#ff543e" />
+        <stop offset="1" stopColor="#c837ab" />
+      </radialGradient>
+      <linearGradient id="ig-c" x2=".2" y2="1">
+        <stop offset=".1" stopColor="#3771c8" />
+        <stop offset=".5" stopColor="#60f" stopOpacity="0" />
+      </linearGradient>
+      <g fill="none" stroke="#fff" strokeWidth="30">
+        <rect width="308" height="308" x="102" y="102" rx="81" />
+        <circle cx="256" cy="256" r="72" />
+        <circle cx="347" cy="165" r="6" />
+      </g>
     </svg>
   )
 }
 
 export function TelegramIcon(props: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.404 1.343-.798 1.343-.32 0-.805-.297-1.52-.794-1.121-.83-2.006-1.506-3.016-2.262-1.166-.873-1.83-1.478-1.83-2.14 0-.66.53-1.182 1.37-1.84 2.4-2.146 4.4-3.955 5.5-4.955.15-.14.3-.21.46-.21z"/>
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
+      <circle cx="16" cy="16" r="14" fill="url(#tg-a)" />
+      <path d="M22.9866 10.2088C23.1112 9.40332 22.3454 8.76755 21.6292 9.082L7.36482 15.3448C6.85123 15.5703 6.8888 16.3483 7.42147 16.5179L10.3631 17.4547C10.9246 17.6335 11.5325 17.541 12.0228 17.2023L18.655 12.6203C18.855 12.4821 19.073 12.7665 18.9021 12.9426L14.1281 17.8646C13.665 18.3421 13.7569 19.1512 14.314 19.5005L19.659 22.8523C20.2585 23.2282 21.0297 22.8506 21.1418 22.1261L22.9866 10.2088Z" fill="white" />
+      <defs>
+        <linearGradient id="tg-a" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#37BBFE" />
+          <stop offset="1" stopColor="#007DBB" />
+        </linearGradient>
+      </defs>
     </svg>
   )
 }

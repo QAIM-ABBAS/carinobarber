@@ -61,7 +61,7 @@
 /* ───── buttons ───── */
 .ac-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 28px;
-  background: var(--brass); color: var(--ink); border: 1px solid var(--brass);
+  background: var(--brass); color: var(--ink); border: 1px solid var(--brass); border-radius: 8px;
   font: inherit; font-size: 17px; font-weight: 800; cursor: pointer;
   transition: background-color 0.2s, opacity 0.2s;
 }
@@ -120,12 +120,15 @@
   display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 14px;
   align-items: center; min-height: 62px; border-bottom: 1px solid var(--line);
 }
-.ac-profile__editing { grid-column: 2 / -1; display: flex; gap: 10px; }
+.ac-profile__editing { grid-column: 2 / -1; display: flex; gap: 10px; min-width: 0; overflow: hidden; }
 .ac-profile__label { flex: none; width: 76px; font-size: 13.5px; color: rgb(241 242 233 / 0.6); }
 .ac-profile__value { flex: 1; min-width: 0; font-size: 16.5px; color: #fff; overflow-wrap: anywhere; }
 .ac-profile__value--phone { direction: ltr; unicode-bidi: plaintext; text-align: right; }
-.ac-profile__edit { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid rgb(255 255 255 / 0.25); color: rgb(241 242 233 / 0.75); cursor: pointer; transition: all 0.2s; }
+.ac-profile__edit { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid rgb(255 255 255 / 0.25); border-radius: 8px; color: rgb(241 242 233 / 0.75); cursor: pointer; transition: all 0.2s; }
 .ac-profile__edit:hover { color: #fff; border-color: rgb(255 255 255 / 0.5); }
+.ac-profile__edit--save { border-color: var(--brass); background: var(--brass); color: var(--ink); }
+.ac-profile__edit--save:hover { background: var(--brass-hi); border-color: var(--brass-hi); }
+.ac-profile__edit--save:disabled { opacity: 0.55; cursor: progress; }
 .ac-profile__edit svg { width: 16px; height: 16px; }
 .ac-profile__actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
 .ac-profile__actions .ac-btn { min-height: 46px; }
@@ -141,7 +144,7 @@
 
 /* inline name editing */
 .ac-profile__editing { display: flex; gap: 10px; flex: 1; }
-.ac-profile__editing input { flex: 1; height: 40px; padding: 0 8px; border: 1px solid rgb(189 131 64 / 0.6); background: rgb(27 26 21 / 0.6); color: var(--cream); font: inherit; font-size: 16px; }
+.ac-profile__editing input { flex: 1; min-width: 0; height: 40px; padding: 0 8px; border: 1px solid rgb(189 131 64 / 0.6); background: rgb(27 26 21 / 0.6); color: var(--cream); font: inherit; font-size: 16px; }
 .ac-profile__editing input:focus { outline: none; border-color: var(--brass); box-shadow: 0 1px 0 0 var(--brass); }
 .ac-profile__save { flex: none; width: 40px; height: 40px; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--brass); background: var(--brass); color: var(--ink); cursor: pointer; }
 .ac-profile__save:hover { background: var(--brass-hi); }

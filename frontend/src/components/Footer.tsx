@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import { aboutText, brand, contact, socials } from '../data/content'
+import { brand, contact, socials } from '../data/content'
 import { InstagramIcon, MailIcon, MapPinIcon, MobileIcon, TelegramIcon } from './icons'
 import './Footer.css'
 
@@ -14,12 +13,6 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="site-footer__content">
-        <section id="about" className="site-footer__col" aria-labelledby="footer-about" tabIndex={-1}>
-          <h2 id="footer-about" className="site-footer__title">درباره ما</h2>
-          <p className="site-footer__text">{aboutText}</p>
-          <Link to="/about" className="site-footer__more">درباره ما بیشتر</Link>
-        </section>
-
         <section id="contact" className="site-footer__col" aria-labelledby="footer-contact" tabIndex={-1}>
           <h2 id="footer-contact" className="site-footer__title">تماس با ما</h2>
           <ul className="site-footer__list">

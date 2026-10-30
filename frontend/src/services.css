@@ -57,7 +57,7 @@
 
 .sv__btn {
   grid-area: btn; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 22px;
-  background: transparent; color: var(--cream); border: 1px solid rgb(255 255 255 / 0.35);
+  background: transparent; color: var(--cream); border: 1px solid rgb(255 255 255 / 0.35); border-radius: 8px;
   font-size: 16px; font-weight: 800; transition: background-color 0.25s, color 0.25s, border-color 0.25s;
 }
 .sv__btn svg { width: 18px; height: 18px; transition: transform 0.3s var(--ease, ease); }
@@ -256,4 +256,12 @@
 @keyframes sv-fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ───────── Mobile scroll-active highlight ───────── */
+@media (max-width: 899.98px) {
+  .sv__item[data-active] { background: rgb(255 255 255 / 0.04); }
+  .sv__item[data-active][data-featured] { background: rgb(189 131 64 / 0.13); }
+  .sv__item[data-active] .sv__btn { background: var(--brass); border-color: var(--brass); color: var(--ink); }
+  .sv__item[data-active] .sv__btn svg { transform: translateX(-4px); }
 }
