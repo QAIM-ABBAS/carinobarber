@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Hero from './components/Hero'
+import ScrollToTop from './components/ScrollToTop'
 import AboutPage from './pages/AboutPage'
 import AccountPage from './pages/AccountPage'
 import BookingPage from './pages/BookingPage'
@@ -28,6 +29,7 @@ export default function App() {
         />
         <Route path="*" element={<Hero />} />
       </Routes>
+      <ScrollToTop />
     </main>
   )
 }
