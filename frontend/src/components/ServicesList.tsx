@@ -5,26 +5,20 @@ import { useServices } from '../lib/useServices'
 import { ArrowStart } from './icons'
 
 /**
- * Price list. The "active" row highlights on hover / focus.
- * A reserve button is shown after the list.
+ * Price list with simple hover effect.
+ * Reserve and services buttons are shown after the list.
  */
 export default function ServicesList() {
   const { services } = useServices()
   const [active, setActive] = useState(defaultActiveService)
-  const reset = () => setActive(defaultActiveService)
 
   return (
     <div>
-      <ul id="services" className="hero__list" onMouseLeave={reset} aria-label="خدمات و تعرفه‌ها">
+      <ul id="services" className="hero__list" aria-label="خدمات و تعرفه‌ها">
         {services.map((s, i) => {
-          const isActive = s.id === active
           return (
             <li key={s.id} className="service" style={{ ['--i' as string]: i }}>
-              <div
-                className="service__row"
-                data-active={isActive}
-                onMouseEnter={() => setActive(s.id)}
-              >
+              <div className="service__row">
                 <span className="service__label">{s.label}</span>
                 <span className="service__end">
                   <span className="service__price">
