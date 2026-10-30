@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Hero from './components/Hero'
 import ScrollToTop from './components/ScrollToTop'
+import { SocialIconDefs } from './components/icons'
 import AboutPage from './pages/AboutPage'
 import AccountPage from './pages/AccountPage'
 import BookingPage from './pages/BookingPage'
@@ -12,24 +13,27 @@ const AdminApp = lazy(() => import('./admin/AdminApp'))
 
 export default function App() {
   return (
-    <main>
-      <Routes>
-        <Route path="/" element={<Hero />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/book" element={<BookingPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route
-          path="/admin/*"
-          element={
-            <Suspense fallback={null}>
-              <AdminApp />
-            </Suspense>
-          }
-        />
-        <Route path="*" element={<Hero />} />
-      </Routes>
-      <ScrollToTop />
-    </main>
+    <>
+      <SocialIconDefs />
+      <main>
+        <Routes>
+          <Route path="/" element={<Hero />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/book" element={<BookingPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route
+            path="/admin/*"
+            element={
+              <Suspense fallback={null}>
+                <AdminApp />
+              </Suspense>
+            }
+          />
+          <Route path="*" element={<Hero />} />
+        </Routes>
+        <ScrollToTop />
+      </main>
+    </>
   )
 }

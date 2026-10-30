@@ -13,21 +13,46 @@ export function ScissorsMark(props: IconProps) {
   )
 }
 
+/**
+ * Single source of truth for the brand paint of the social icons. Rendered once
+ * at the app root: every Instagram/Telegram instance references these ids, so
+ * the gradients never get duplicated (and never end up inside a hidden subtree,
+ * which would stop them from painting).
+ */
+export function SocialIconDefs() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="0"
+      height="0"
+      style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
+    >
+      <defs>
+        <rect id="ig-b" width="512" height="512" rx="15%" />
+        <radialGradient id="ig-a" cx=".4" cy="1" r="1">
+          <stop offset=".1" stopColor="#fd5" />
+          <stop offset=".5" stopColor="#ff543e" />
+          <stop offset="1" stopColor="#c837ab" />
+        </radialGradient>
+        <linearGradient id="ig-c" x2=".2" y2="1">
+          <stop offset=".1" stopColor="#3771c8" />
+          <stop offset=".5" stopColor="#60f" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="tg-a" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#37BBFE" />
+          <stop offset="1" stopColor="#007DBB" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
 export function InstagramIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 512 512" aria-hidden="true" {...props}>
-      <rect width="512" height="512" rx="15%" id="ig-b" />
       <use fill="url(#ig-a)" href="#ig-b" />
       <use fill="url(#ig-c)" href="#ig-b" />
-      <radialGradient id="ig-a" cx=".4" cy="1" r="1">
-        <stop offset=".1" stopColor="#fd5" />
-        <stop offset=".5" stopColor="#ff543e" />
-        <stop offset="1" stopColor="#c837ab" />
-      </radialGradient>
-      <linearGradient id="ig-c" x2=".2" y2="1">
-        <stop offset=".1" stopColor="#3771c8" />
-        <stop offset=".5" stopColor="#60f" stopOpacity="0" />
-      </linearGradient>
       <g fill="none" stroke="#fff" strokeWidth="30">
         <rect width="308" height="308" x="102" y="102" rx="81" />
         <circle cx="256" cy="256" r="72" />
@@ -42,12 +67,6 @@ export function TelegramIcon(props: IconProps) {
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
       <circle cx="16" cy="16" r="14" fill="url(#tg-a)" />
       <path d="M22.9866 10.2088C23.1112 9.40332 22.3454 8.76755 21.6292 9.082L7.36482 15.3448C6.85123 15.5703 6.8888 16.3483 7.42147 16.5179L10.3631 17.4547C10.9246 17.6335 11.5325 17.541 12.0228 17.2023L18.655 12.6203C18.855 12.4821 19.073 12.7665 18.9021 12.9426L14.1281 17.8646C13.665 18.3421 13.7569 19.1512 14.314 19.5005L19.659 22.8523C20.2585 23.2282 21.0297 22.8506 21.1418 22.1261L22.9866 10.2088Z" fill="white" />
-      <defs>
-        <linearGradient id="tg-a" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#37BBFE" />
-          <stop offset="1" stopColor="#007DBB" />
-        </linearGradient>
-      </defs>
     </svg>
   )
 }
