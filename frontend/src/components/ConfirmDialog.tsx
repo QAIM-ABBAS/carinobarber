@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
+import DangerButton from './DangerButton'
 
 export interface ConfirmDialogProps {
   open: boolean
@@ -94,17 +95,26 @@ export default function ConfirmDialog({
         </h2>
         <p className="ac-dialog__message">{message}</p>
         <div className="ac-dialog__actions">
-          <button
-            type="button"
-            className={`ac-btn${danger ? ' ac-btn--danger' : ''}`}
-            onClick={onConfirm}
-            disabled={loading}
-          >
-            {loading && (
-              <span className={`ac-spinner${danger ? ' ac-spinner--light' : ''}`} aria-hidden="true" />
-            )}
-            {loading ? 'در حال انجام…' : confirmLabel}
-          </button>
+          {danger ? (
+            <DangerButton
+              appearance="outline"
+              onClick={onConfirm}
+              loading={loading}
+              loadingLabel="در حال انجام…"
+            >
+              {confirmLabel}
+            </DangerButton>
+          ) : (
+            <button
+              type="button"
+              className="ac-btn"
+              onClick={onConfirm}
+              disabled={loading}
+            >
+              {loading && <span className="ac-spinner" aria-hidden="true" />}
+              {loading ? 'در حال انجام…' : confirmLabel}
+            </button>
+          )}
           <button
             type="button"
             className="ac-btn ac-btn--ghost"

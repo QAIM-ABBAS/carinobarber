@@ -1,5 +1,6 @@
 import type { MyBooking } from '../lib/api'
 import { formatPrice, toFaDigits } from '../lib/booking'
+import DangerButton from '../components/DangerButton'
 import { formatBookedAt } from './bookingView'
 import BookingStatus from './BookingStatus'
 
@@ -29,14 +30,13 @@ export default function BookingCard({ booking, cancelling, onCancel }: BookingCa
       </p>
       {booking.can_cancel && (
         <div className="ac-booking__foot">
-          <button
-            type="button"
-            className="ac-btn ac-btn--danger ac-btn--small"
+          <DangerButton
+            appearance="outline"
             onClick={() => onCancel(booking)}
             disabled={cancelling}
           >
             لغو نوبت
-          </button>
+          </DangerButton>
         </div>
       )}
     </article>

@@ -70,8 +70,6 @@
 .ac-btn:disabled { opacity: 0.6; cursor: progress; }
 .ac-btn--ghost { background: transparent; color: var(--cream); border-color: rgb(255 255 255 / 0.35); }
 .ac-btn--ghost:hover { background: rgb(255 255 255 / 0.08); }
-.ac-btn--danger { background: transparent; color: #e07a5f; border-color: rgb(224 122 95 / 0.5); }
-.ac-btn--danger:hover { background: rgb(224 122 95 / 0.12); border-color: #e07a5f; }
 .ac-btn--small { min-height: 40px; padding: 0 18px; font-size: 15px; font-weight: 700; }
 .ac-btn--block { width: 100%; margin-top: 8px; }
 
@@ -131,12 +129,12 @@
 .ac-profile__edit--save:disabled { opacity: 0.55; cursor: progress; }
 .ac-profile__edit svg { width: 16px; height: 16px; }
 .ac-profile__actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
-.ac-profile__actions .ac-btn { min-height: 46px; }
+.ac-profile__actions .ac-btn, .ac-profile__actions .danger-button { min-height: 46px; }
 
 /* On phones the two actions share one row (they used to wrap under each other). */
 @media (max-width: 600px) {
   .ac-profile__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .ac-profile__actions .ac-btn {
+  .ac-profile__actions .ac-btn, .ac-profile__actions .danger-button {
     width: 100%; min-width: 0; min-height: 44px; padding: 0 10px;
     font-size: 15px; white-space: nowrap;
   }
@@ -214,7 +212,7 @@
 .ac-dialog__title { margin: 0 0 10px; font-size: 18px; font-weight: 700; color: var(--cream); }
 .ac-dialog__message { margin: 0; font-size: 15px; line-height: 1.9; color: rgb(241 242 233 / 0.8); }
 .ac-dialog__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
-.ac-dialog__actions .ac-btn { min-height: 46px; font-size: 15.5px; }
+.ac-dialog__actions .ac-btn, .ac-dialog__actions .danger-button { min-height: 46px; font-size: 15.5px; }
 
 /* ───── small phones (360–480): more room for values ───── */
 @media (max-width: 480px) {

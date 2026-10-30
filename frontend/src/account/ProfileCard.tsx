@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { ApiError, updateMe } from '../lib/api'
 import { toFaDigits } from '../lib/booking'
+import DangerButton from '../components/DangerButton'
 import { CheckIcon, PencilIcon } from '../components/icons'
 
 const NAME_RULES = 'نام باید ۲ تا ۱۰۰ حرف باشد.'
@@ -132,9 +133,9 @@ export default function ProfileCard() {
         <Link to="/book" className="ac-btn">
           رزرو نوبت جدید
         </Link>
-        <button type="button" className="ac-btn ac-btn--danger" onClick={logout}>
+        <DangerButton appearance="outline" onClick={logout}>
           خروج از حساب
-        </button>
+        </DangerButton>
       </div>
     </div>
   )
