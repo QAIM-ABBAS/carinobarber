@@ -1,4 +1,5 @@
 import JalaliDateInput from './JalaliDateInput'
+import Select from './Select'
 
 export interface BookingFiltersProps {
   dateFrom: string
@@ -55,19 +56,16 @@ export default function BookingFilters({
         <label className="ad-filter__label" htmlFor="filter-status">
           وضعیت
         </label>
-        <select
+        <Select
           id="filter-status"
-          className="ad-select"
           value={status}
-          onChange={(event) => onStatusChange(event.target.value)}
-        >
-          <option value="">همهٔ وضعیت‌ها</option>
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={onStatusChange}
+          placeholder="همهٔ وضعیت‌ها"
+          options={[
+            { value: '', label: 'همهٔ وضعیت‌ها' },
+            ...statusOptions.map((option) => ({ value: option.value, label: option.label })),
+          ]}
+        />
       </div>
 
       <div className="ad-filter ad-filter--grow">

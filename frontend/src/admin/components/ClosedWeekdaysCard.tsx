@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError, GENERIC_ERROR_MESSAGE } from '../api/client'
 import { useSettings, useUpdateSettings } from '../api/hooks'
+import Toggle from '../../components/Toggle'
 import Button from '../components/Button'
 import Skeleton from '../components/Skeleton'
 import { useToast } from '../components/Toast'
@@ -57,14 +58,13 @@ export default function ClosedWeekdaysCard() {
         <form onSubmit={onSubmit} noValidate>
           <div className="ad-weekdays">
             {WEEKDAYS.map((day) => (
-              <label className="ad-weekday" key={day.value}>
-                <input
-                  type="checkbox"
-                  checked={closedWeekdays.includes(day.value)}
-                  onChange={() => toggle(day.value)}
-                />
-                <span>{day.label}</span>
-              </label>
+              <Toggle
+                className="ad-weekday"
+                key={day.value}
+                checked={closedWeekdays.includes(day.value)}
+                onChange={() => toggle(day.value)}
+                label={day.label}
+              />
             ))}
           </div>
 

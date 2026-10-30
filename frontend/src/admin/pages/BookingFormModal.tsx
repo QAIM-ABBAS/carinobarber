@@ -13,8 +13,9 @@ import {
   type BookingFormErrors,
   type BookingFormState,
 } from '../lib/bookingForm'
-import { addDays, formatTime, todayISO } from '../lib/format'
-import JalaliDateInput from '../components/JalaliDateInput'
+import { addDays, faDigits, formatJalali, formatJalaliWeekday, formatTime, formatToman, todayISO } from '../lib/format'
+import JalaliCalendar from '../components/JalaliCalendar'
+import Select from '../components/Select'
 
 export interface BookingFormModalProps {
   open: boolean
@@ -103,8 +104,10 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
     <Modal
       open={open}
       title="ثبت نوبت دستی"
+      description="خدمت را انتخاب کنید، روز را از تقویم و ساعت را از میان ساعت‌های آزاد برگزینید."
       onClose={onClose}
       wide
+      footerClassName="ad-modal__foot--center"
       footer={
         <>
           <Button type="submit" form="booking-form" loading={create.isPending}>
@@ -117,77 +120,87 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
       }
     >
       <form id="booking-form" className="ad-form ad-form--two" onSubmit={onSubmit} noValidate>
-        <Field label="خدمت" htmlFor="booking-service" error={errors.service}>
-          <select
+        <Field label="خدمت" htmlFor="booking-service" required error={errors.service}>
+          <Select
             id="booking-service"
-            className="ad-select"
             value={serviceId}
-            onChange={(event) => update({ serviceId: event.target.value })}
+            onChange={(next) => update({ serviceId: next })}
             aria-invalid={Boolean(errors.service)}
-          >
-            <option value="">انتخاب کنید</option>
-            {activeServices.map((service) => (
-              <option key={service.id} value={service.slug}>
-                {service.label} — {service.price.toLocaleString('fa-IR')} تومان
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="تاریخ نوبت" htmlFor="booking-date" error={errors.date}>
-          <JalaliDateInput
-            id="booking-date"
-            value={date}
-            min={today}
-            max={maxDate}
-            onChange={(iso) => update({ date: iso, time: '' })}
-            aria-invalid={Boolean(errors.date)}
+            options={activeServices.map((service) => ({
+              value: service.slug,
+              label: `${service.label} — ${formatToman(service.price)} تومان`,
+            }))}
           />
         </Field>
 
-        <Field
-          label="ساعت نوبت"
-          htmlFor="booking-time"
-          error={errors.time}
-          hint={
-            day?.closed
-              ? 'باشگاه در این روز تعطیل است.'
-              : date
-                ? 'ساعت‌های رزروشده غیرفعال هستند.'
-                : 'اول تاریخ را انتخاب کنید.'
-          }
-        >
-          <select
-            id="booking-time"
-            className="ad-select"
-            value={time}
-            onChange={(event) => update({ time: event.target.value })}
-            disabled={!date || !slots.length}
-            aria-invalid={Boolean(errors.time)}
-          >
-            <option value="">انتخاب کنید</option>
-            {slots.map((slot) => (
-              <option key={slot.time} value={slot.time} disabled={!slot.available}>
-                {formatTime(slot.time)}
-                {slot.available ? '' : ' — رزرو شده'}
-              </option>
-            ))}
-          </select>
-        </Field>
-
         <Field label="وضعیت" htmlFor="booking-status">
-          <select
+          <Select
             id="booking-status"
-            className="ad-select"
             value={status}
-            onChange={(event) => update({ status: event.target.value as 'confirmed' | 'pending' })}
-          >
-            <option value="confirmed">تأیید شده</option>
-            <option value="pending">در انتظار تأیید</option>
-          </select>
+            onChange={(next) => update({ status: next as 'confirmed' | 'pending' })}
+            options={[
+              { value: 'confirmed', label: 'تأیید شده' },
+              { value: 'pending', label: 'در انتظار تأیید' },
+            ]}
+          />
         </Field>
 
-        <Field label="نام و نام خانوادگی" htmlFor="booking-name" error={errors.name}>
+        <div className="ad-form__full ad-booking-when">
+          <Field
+            label="روز نوبت"
+            htmlFor="booking-date"
+            required
+            error={errors.date}
+            hint={date ? `${formatJalaliWeekday(date)} — ${formatJalali(date)}` : 'روز نوبت را از تقویم انتخاب کنید.'}
+          >
+            <JalaliCalendar
+              id="booking-date"
+              value={date}
+              min={today}
+              max={maxDate}
+              onChange={(iso) => {
+                if (iso !== date) update({ date: iso, time: '' })
+              }}
+            />
+          </Field>
+
+          <Field
+            label="ساعت نوبت"
+            htmlFor="booking-time"
+            required
+            error={errors.time}
+            hint={slots.length > 0 ? 'ساعت‌های رزروشده غیرفعال‌اند.' : undefined}
+          >
+            <div className="ad-slots" id="booking-time" role="group" aria-label="ساعت‌های آزاد">
+              {slots.length > 0 ? (
+                slots.map((slot) => (
+                  <button
+                    type="button"
+                    key={slot.time}
+                    className="ad-slot"
+                    aria-pressed={time === slot.time}
+                    disabled={!slot.available}
+                    onClick={() => update({ time: slot.time })}
+                  >
+                    {formatTime(slot.time)}
+                  </button>
+                ))
+              ) : (
+                <p className="ad-slots__empty">
+                  {!date
+                    ? 'اول روز را از تقویم انتخاب کنید.'
+                    : availability.isFetching
+                      ? 'در حال دریافت ساعت‌های آزاد…'
+                      : day?.closed
+                        ? 'این روز تعطیل است؛ روز دیگری را انتخاب کنید.'
+                        : 'برای این روز ساعت آزادی نمانده است.'}
+                </p>
+              )}
+            </div>
+          </Field>
+        </div>
+
+        <Field label="نام و نام خانوادگی" htmlFor="booking-name" required error={errors.name}>
           <input
             id="booking-name"
             className="ad-input"
@@ -202,6 +215,7 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
         <Field
           label="شماره موبایل"
           htmlFor="booking-phone"
+          required
           error={errors.phone}
           hint={normalizePhone(phone) ? `شمارهٔ نرمال: ${normalizePhone(phone)}` : undefined}
         >
@@ -223,6 +237,7 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
           htmlFor="booking-note"
           className="ad-form__full"
           hint="اختیاری — فقط برای مدیران قابل مشاهده است."
+          meta={`${faDigits(note.length)} از ${faDigits(2000)} نویسه`}
         >
           <textarea
             id="booking-note"

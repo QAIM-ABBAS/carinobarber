@@ -1,4 +1,5 @@
 import Button from './Button'
+import DangerButton from '../../components/DangerButton'
 import Modal from './Modal'
 
 export interface ConfirmDialogProps {
@@ -33,9 +34,15 @@ export default function ConfirmDialog({
       onClose={onCancel}
       footer={
         <>
-          <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
-            {confirmLabel}
-          </Button>
+          {danger ? (
+            <DangerButton onClick={onConfirm} loading={loading}>
+              {confirmLabel}
+            </DangerButton>
+          ) : (
+            <Button onClick={onConfirm} loading={loading}>
+              {confirmLabel}
+            </Button>
+          )}
           <Button variant="ghost" onClick={onCancel}>
             {cancelLabel}
           </Button>

@@ -5,6 +5,7 @@ import type { AdminBooking, BookingStatus } from '../api/types'
 import { ALLOWED_TRANSITIONS, STATUS_LABELS } from '../lib/format'
 import Button from './Button'
 import ConfirmDialog from './ConfirmDialog'
+import DangerButton from '../../components/DangerButton'
 import { useToast } from './Toast'
 
 export interface BookingStatusActionsProps {
@@ -53,17 +54,29 @@ export default function BookingStatusActions({ booking, onDone }: BookingStatusA
 
   return (
     <>
-      {transitions.map((status) => (
-        <Button
-          key={status}
-          size="sm"
-          variant={status === 'cancelled' || status === 'no_show' ? 'danger' : 'secondary'}
-          onClick={() => onClick(status)}
-          loading={busy}
-        >
-          {STATUS_LABELS[status]}
-        </Button>
-      ))}
+      {transitions.map((status) => {
+        const isDanger = status === 'cancelled' || status === 'no_show'
+        return isDanger ? (
+          <DangerButton
+            key={status}
+            size="sm"
+            onClick={() => onClick(status)}
+            loading={busy}
+          >
+            {STATUS_LABELS[status]}
+          </DangerButton>
+        ) : (
+          <Button
+            key={status}
+            size="sm"
+            variant="secondary"
+            onClick={() => onClick(status)}
+            loading={busy}
+          >
+            {STATUS_LABELS[status]}
+          </Button>
+        )
+      })}
 
       <ConfirmDialog
         open={confirming !== null}

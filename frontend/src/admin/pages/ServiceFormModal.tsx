@@ -11,11 +11,13 @@ import {
   type ServiceFormState,
 } from '../lib/serviceForm'
 import Button from '../components/Button'
-import Toggle from '../components/Toggle'
+import Toggle from '../../components/Toggle'
 import Field from '../components/Field'
 import Modal from '../components/Modal'
 import TagInput from '../components/TagInput'
 import { useToast } from '../components/Toast'
+import { faDigits } from '../lib/format'
+import { LockIcon } from '../layout/icons'
 
 export interface ServiceFormModalProps {
   open: boolean
@@ -24,7 +26,12 @@ export interface ServiceFormModalProps {
   onClose: () => void
 }
 
-/** The form that creates and edits a service. */
+/**
+ * The form that creates and edits a service.
+ *
+ * The form is split into three labelled sections (identity, price/time, display)
+ * so every control has an obvious heading, label and helper text.
+ */
 export default function ServiceFormModal({ open, service, onClose }: ServiceFormModalProps) {
   const [form, setForm] = useState<ServiceFormState>(EMPTY_SERVICE_FORM)
   const [errors, setErrors] = useState<ServiceFormErrors>({})
@@ -99,125 +106,221 @@ export default function ServiceFormModal({ open, service, onClose }: ServiceForm
     <Modal
       open={open}
       title={isNew ? 'افزودن خدمت' : `ویرایش «${service?.label ?? ''}»`}
+      description={
+        isNew
+          ? 'فیلدهای ستاره‌دار الزامی‌اند. خدمت جدید بلافاصله در سایت دیده می‌شود.'
+          : 'فیلدهای ستاره‌دار الزامی‌اند. تغییرات پس از ذخیره در سایت اعمال می‌شود.'
+      }
       onClose={onClose}
       wide
+      footerClassName="ad-modal__foot--split"
       footer={
         <>
-          <Button type="submit" form="service-form" size="sm" loading={create.isPending || update.isPending}>
+          <Button type="submit" form="service-form" loading={create.isPending || update.isPending}>
             {isNew ? 'افزودن خدمت' : 'ذخیرهٔ تغییرات'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             انصراف
           </Button>
         </>
       }
     >
-      <form id="service-form" className="ad-form ad-form--two" onSubmit={onSubmit} noValidate>
-        <Field label="نام خدمت" htmlFor="service-label" error={errors.label}>
-          <input
-            id="service-label"
-            className="ad-input"
-            type="text"
-            value={form.label}
-            maxLength={100}
-            onChange={(event) => patch({ label: event.target.value })}
-            aria-invalid={Boolean(errors.label)}
-          />
-        </Field>
+      <form id="service-form" className="ad-service-form" onSubmit={onSubmit} noValidate>
+        <section className="ad-form-section" aria-labelledby="service-section-basic">
+          <div className="ad-form-section__head">
+            <h3 className="ad-form-section__title" id="service-section-basic">
+              مشخصات خدمت
+            </h3>
+            <p className="ad-form-section__desc">
+              نام، شناسه و توضیحی که مشتری در سایت و صفحهٔ رزرو می‌بیند.
+            </p>
+          </div>
 
-        <Field
-          label="شناسه (انگلیسی)"
-          htmlFor="service-slug"
-          error={errors.slug}
-          hint={
-            isNew
-              ? 'حروف کوچک انگلیسی، رقم و خط تیره — مثلاً haircut'
-              : 'شناسه بعد از ساخت قابل تغییر نیست.'
-          }
-        >
-          <input
-            id="service-slug"
-            className="ad-input"
-            type="text"
-            dir="ltr"
-            value={form.slug}
-            maxLength={50}
-            disabled={!isNew}
-            onChange={(event) => patch({ slug: event.target.value.toLowerCase() })}
-            aria-invalid={Boolean(errors.slug)}
-          />
-        </Field>
+          <div className="ad-form-section__grid ad-form-section__grid--two">
+            <Field
+              label="نام خدمت"
+              htmlFor="service-label"
+              required
+              error={errors.label}
+              hint="همین نام در فهرست خدمات و صفحهٔ رزرو دیده می‌شود."
+            >
+              <input
+                id="service-label"
+                className="ad-input"
+                type="text"
+                value={form.label}
+                maxLength={100}
+                required
+                placeholder="مثلاً اصلاح موی سر"
+                onChange={(event) => patch({ label: event.target.value })}
+                aria-invalid={Boolean(errors.label)}
+              />
+            </Field>
 
-        <Field
-          label="توضیح"
-          htmlFor="service-description"
-          error={errors.description}
-          className="ad-form__full"
-        >
-          <textarea
-            id="service-description"
-            className="ad-textarea"
-            value={form.description}
-            maxLength={2000}
-            onChange={(event) => patch({ description: event.target.value })}
-            aria-invalid={Boolean(errors.description)}
-          />
-        </Field>
+            {isNew ? (
+              <Field
+                label="شناسه (انگلیسی)"
+                htmlFor="service-slug"
+                required
+                error={errors.slug}
+                hint="حروف کوچک انگلیسی، رقم و خط تیره — مثلاً haircut"
+              >
+                <input
+                  id="service-slug"
+                  className="ad-input"
+                  type="text"
+                  dir="ltr"
+                  value={form.slug}
+                  maxLength={50}
+                  required
+                  placeholder="haircut"
+                  onChange={(event) => patch({ slug: event.target.value.toLowerCase() })}
+                  aria-invalid={Boolean(errors.slug)}
+                />
+              </Field>
+            ) : (
+              <div className="ad-field">
+                <span className="ad-field__label">شناسه (انگلیسی)</span>
+                <div className="ad-readonly">
+                  <code className="ad-readonly__value" dir="ltr">
+                    {form.slug}
+                  </code>
+                  <span className="ad-readonly__badge">
+                    <LockIcon />
+                    ثابت
+                  </span>
+                </div>
+                <p className="ad-field__hint">شناسه بعد از ساخت قابل تغییر نیست.</p>
+              </div>
+            )}
 
-        <div className="ad-form__row">
-          <Field label="قیمت (تومان)" htmlFor="service-price" error={errors.price}>
-            <input
-              id="service-price"
-              className="ad-input"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={form.price}
-              onChange={(event) => patch({ price: event.target.value })}
-              aria-invalid={Boolean(errors.price)}
+            <Field
+              label="توضیح خدمت"
+              htmlFor="service-description"
+              required
+              error={errors.description}
+              className="ad-form__full"
+              meta={`${faDigits(form.description.length)} از ${faDigits(2000)} نویسه`}
+            >
+              <textarea
+                id="service-description"
+                className="ad-textarea"
+                value={form.description}
+                maxLength={2000}
+                required
+                placeholder="یک توضیح کوتاه دربارهٔ این خدمت و نتیجه‌اش…"
+                onChange={(event) => patch({ description: event.target.value })}
+                aria-invalid={Boolean(errors.description)}
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="ad-form-section" aria-labelledby="service-section-price">
+          <div className="ad-form-section__head">
+            <h3 className="ad-form-section__title" id="service-section-price">
+              قیمت و زمان
+            </h3>
+            <p className="ad-form-section__desc">
+              مبلغ، مدت انجام و جای این خدمت در فهرست سایت.
+            </p>
+          </div>
+
+          <div className="ad-form-section__grid ad-form-section__grid--three">
+            <Field label="قیمت" htmlFor="service-price" required error={errors.price}>
+              <div className="ad-input-wrap">
+                <input
+                  id="service-price"
+                  className="ad-input ad-input--unit"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={form.price}
+                  required
+                  onChange={(event) => patch({ price: event.target.value })}
+                  aria-invalid={Boolean(errors.price)}
+                />
+                <span className="ad-input__unit">تومان</span>
+              </div>
+            </Field>
+
+            <Field label="مدت زمان" htmlFor="service-duration" required error={errors.duration}>
+              <div className="ad-input-wrap">
+                <input
+                  id="service-duration"
+                  className="ad-input ad-input--unit"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={600}
+                  value={form.duration}
+                  required
+                  onChange={(event) => patch({ duration: event.target.value })}
+                  aria-invalid={Boolean(errors.duration)}
+                />
+                <span className="ad-input__unit">دقیقه</span>
+              </div>
+            </Field>
+
+            <Field
+              label="ترتیب نمایش"
+              htmlFor="service-sort"
+              error={errors.sort_order}
+              hint="عدد کوچک‌تر، بالاتر در فهرست."
+            >
+              <input
+                id="service-sort"
+                className="ad-input"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={form.sort_order}
+                onChange={(event) => patch({ sort_order: event.target.value })}
+                aria-invalid={Boolean(errors.sort_order)}
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="ad-form-section" aria-labelledby="service-section-display">
+          <div className="ad-form-section__head">
+            <h3 className="ad-form-section__title" id="service-section-display">
+              نمایش و ویژگی‌ها
+            </h3>
+            <p className="ad-form-section__desc">
+              وضعیت خدمت در سایت و مواردی که زیر نام آن فهرست می‌شود.
+            </p>
+          </div>
+
+          <div className="ad-form-section__grid">
+            <div className="ad-toggle-grid">
+              <Toggle
+                checked={form.is_active}
+                onChange={(val) => patch({ is_active: val })}
+                label="نمایش در سایت"
+                description="اگر خاموش باشد، خدمت از سایت و صفحهٔ رزرو حذف می‌شود."
+              />
+              <Toggle
+                checked={form.featured}
+                onChange={(val) => patch({ featured: val })}
+                label="خدمت ویژه"
+                description="با ستاره در فهرست خدمات نشان داده می‌شود."
+              />
+            </div>
+
+            <TagInput
+              label="موارد شامل خدمت"
+              htmlFor="service-includes"
+              value={form.includes}
+              onChange={(includes) => patch({ includes })}
+              error={errors.includes}
+              hint="هر مورد را با Enter یا کاما اضافه کنید؛ مثلاً شست‌وشو، ماساژ سر."
             />
-          </Field>
-
-          <Field label="مدت زمان (دقیقه)" htmlFor="service-duration" error={errors.duration}>
-            <input
-              id="service-duration"
-              className="ad-input"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={600}
-              value={form.duration}
-              onChange={(event) => patch({ duration: event.target.value })}
-              aria-invalid={Boolean(errors.duration)}
-            />
-          </Field>
-        </div>
-
-        <div className="ad-switches ad-form__full">
-          <Toggle
-            checked={form.is_active}
-            onChange={(val) => patch({ is_active: val })}
-            label="نمایش در سایت"
-          />
-          <Toggle
-            checked={form.featured}
-            onChange={(val) => patch({ featured: val })}
-            label="خدمت ویژه"
-          />
-        </div>
-
-        <TagInput
-          label="موارد شامل خدمت"
-          htmlFor="service-includes"
-          value={form.includes}
-          onChange={(includes) => patch({ includes })}
-          error={errors.includes}
-          hint="با Enter یا کاما اضافه می‌شود."
-          className="ad-form__full"
-        />
+          </div>
+        </section>
 
         {formError && (
-          <p className="ad-alert ad-alert--error ad-form__full" role="alert">
+          <p className="ad-alert ad-alert--error" role="alert">
             {formError}
           </p>
         )}

@@ -4,12 +4,13 @@ import { useAdminServices, useDeactivateService, useUpdateService } from '../api
 import type { AdminService } from '../api/types'
 import Button from '../components/Button'
 import ConfirmDialog from '../components/ConfirmDialog'
+import DangerButton from '../../components/DangerButton'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import PageHeader from '../components/PageHeader'
 import { SkeletonTable } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
-import Toggle from '../components/Toggle'
+import Toggle from '../../components/Toggle'
 import { formatNumber, formatToman } from '../lib/format'
 import {
   ArrowDownIcon,
@@ -221,14 +222,13 @@ export default function AdminServicesPage() {
                         ویرایش
                       </Button>
                       {service.is_active && (
-                        <Button
+                        <DangerButton
                           size="sm"
-                          variant="danger"
                           icon={<TrashIcon />}
                           onClick={() => setDeactivating(service)}
                         >
                           غیرفعال‌سازی
-                        </Button>
+                        </DangerButton>
                       )}
                     </div>
                   </td>

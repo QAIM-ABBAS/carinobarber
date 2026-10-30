@@ -5,6 +5,7 @@ import type { ShopSettingsUpdate } from '../api/types'
 import Button from '../components/Button'
 import ErrorState from '../components/ErrorState'
 import Field from '../components/Field'
+import Select from '../components/Select'
 import Skeleton from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { faDigits } from '../lib/format'
@@ -106,33 +107,21 @@ export default function WorkingHoursCard() {
       ) : (
         <form className="ad-form ad-form--two" onSubmit={onSubmit} noValidate>
           <Field label="ساعت شروع" htmlFor="open-hour">
-            <select
+            <Select
               id="open-hour"
-              className="ad-select"
               value={hours.open_hour}
-              onChange={(event) => setHour({ open_hour: event.target.value })}
-            >
-              {HOURS.map((hour) => (
-                <option key={hour} value={hour}>
-                  {faDigits(hour)}
-                </option>
-              ))}
-            </select>
+              onChange={(hour) => setHour({ open_hour: hour })}
+              options={HOURS.map((hour) => ({ value: String(hour), label: faDigits(hour) }))}
+            />
           </Field>
 
           <Field label="ساعت پایان" htmlFor="close-hour">
-            <select
+            <Select
               id="close-hour"
-              className="ad-select"
               value={hours.close_hour}
-              onChange={(event) => setHour({ close_hour: event.target.value })}
-            >
-              {HOURS.map((hour) => (
-                <option key={hour} value={hour}>
-                  {faDigits(hour)}
-                </option>
-              ))}
-            </select>
+              onChange={(hour) => setHour({ close_hour: hour })}
+              options={HOURS.map((hour) => ({ value: String(hour), label: faDigits(hour) }))}
+            />
           </Field>
 
           <Field

@@ -3,6 +3,7 @@ import { ApiError, GENERIC_ERROR_MESSAGE } from '../api/client'
 import { useAddClosedDate, useClosedDates, useDeleteClosedDate } from '../api/hooks'
 import Button from '../components/Button'
 import ConfirmDialog from '../components/ConfirmDialog'
+import DangerButton from '../../components/DangerButton'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import Field from '../components/Field'
@@ -10,7 +11,7 @@ import Skeleton from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { formatJalali, todayISO } from '../lib/format'
 import { TrashIcon } from '../layout/icons'
-import JalaliDateInput from '../components/JalaliDateInput'
+import JalaliDatePicker from '../components/JalaliDatePicker'
 
 /** The holidays of the shop: the days the barbershop does not open. */
 export default function ClosedDatesCard() {
@@ -73,10 +74,13 @@ export default function ClosedDatesCard() {
 
       <form className="ad-closed-add" onSubmit={onSubmit} noValidate>
         <Field label="تاریخ" htmlFor="closed-date">
-          <JalaliDateInput
+          <JalaliDatePicker
             id="closed-date"
             value={date}
-            onChange={(iso) => { setDate(iso); setError(null) }}
+            onChange={(iso) => {
+              setDate(iso)
+              setError(null)
+            }}
             aria-invalid={Boolean(error)}
           />
         </Field>
@@ -130,15 +134,14 @@ export default function ClosedDatesCard() {
                 <span className="ad-closed-list__date">{formatJalali(item.date)}</span>
                 {item.reason && <span className="ad-closed-list__reason">{item.reason}</span>}
               </div>
-              <Button
+              <DangerButton
                 size="sm"
-                variant="danger"
                 icon={<TrashIcon />}
                 aria-label={`حذف تعطیلی ${item.date}`}
                 onClick={() => setDeleting(item.id)}
               >
                 حذف
-              </Button>
+              </DangerButton>
             </li>
           ))}
         </ul>

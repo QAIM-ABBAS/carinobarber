@@ -4,6 +4,7 @@ import { ApiError, GENERIC_ERROR_MESSAGE } from '../api/client'
 import { useDeleteServiceImage, useUploadServiceImage } from '../api/hooks'
 import type { AdminService } from '../api/types'
 import Button from '../components/Button'
+import DangerButton from '../../components/DangerButton'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
 import { formatNumber } from '../lib/format'
@@ -171,14 +172,13 @@ export default function ServiceImagesModal({ open, service, onClose }: ServiceIm
               </a>
               {removing === url ? (
                 <div className="ad-gallery__confirm">
-                  <Button
+                  <DangerButton
                     size="sm"
-                    variant="danger"
                     loading={removingBusy}
                     onClick={() => void confirmRemove()}
                   >
                     حذف کن
-                  </Button>
+                  </DangerButton>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -189,15 +189,14 @@ export default function ServiceImagesModal({ open, service, onClose }: ServiceIm
                   </Button>
                 </div>
               ) : (
-                <Button
+                <DangerButton
                   size="sm"
-                  variant="danger"
                   icon={<TrashIcon />}
                   disabled={uploading}
                   onClick={() => setRemoving(url)}
                 >
                   حذف
-                </Button>
+                </DangerButton>
               )}
             </li>
           ))}
