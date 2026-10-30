@@ -4,11 +4,20 @@
  * into the public pages. The tokens of `index.css` are reused (with a fallback).
  */
 
-.ad-shell {
+/*
+ * The tokens are shared by the shell, the login page and the portaled modals.
+ * The modal lives in <body> (outside .ad-shell), so it cannot inherit them
+ * from the shell; it needs its own copy.
+ */
+.ad-shell,
+.ad-login,
+.ad-modal,
+.ad-picker__menu,
+.ad-datepicker__popover {
   --ad-line: rgb(255 255 255 / 0.14);
   --ad-line-strong: rgb(255 255 255 / 0.35);
-  --ad-panel: rgb(22 23 20 / 0.7);
-  --ad-panel-solid: rgb(22 23 20 / 0.92);
+  --ad-panel: rgb(22 23 20 / 0.9);
+  --ad-panel-solid: rgb(22 23 20 / 0.98);
   --ad-brass: var(--color-brass, #bd8340);
   --ad-brass-hi: var(--color-brass-hi, #d09849);
   --ad-cream: var(--color-cream, #f1f2e9);
@@ -16,7 +25,9 @@
   --ad-danger: #e07a5f;
   --ad-muted: rgb(241 242 233 / 0.62);
   --ad-radius: 0;
+}
 
+.ad-shell {
   min-height: 100svh;
   color-scheme: dark;
   background:
@@ -586,17 +597,6 @@
   border-color: var(--ad-line-strong);
   background: rgb(255 255 255 / 0.08);
 }
-.ad-btn--danger {
-  background: var(--ad-danger);
-  color: #fff;
-  border-color: var(--ad-danger);
-  box-shadow: 0 2px 8px rgb(224 122 95 / 0.35);
-}
-.ad-btn--danger:hover:not(:disabled) {
-  background: #e8826a;
-  border-color: #e8826a;
-  box-shadow: 0 4px 12px rgb(224 122 95 / 0.45);
-}
 .ad-btn--sm {
   min-height: 34px;
   padding: 0 12px;
@@ -628,28 +628,49 @@
   gap: 6px;
   min-width: 0;
 }
+.ad-field__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
 .ad-field__label {
   font-size: 13px;
+  font-weight: 600;
+  color: rgb(241 242 233 / 0.9);
+}
+.ad-field__required {
+  margin-inline-start: 4px;
+  color: var(--ad-brass);
+}
+.ad-field__meta {
+  flex: none;
+  font-size: 11.5px;
   color: var(--ad-muted);
+  font-variant-numeric: tabular-nums;
 }
 .ad-input,
 .ad-select,
 .ad-textarea {
   width: 100%;
   min-height: 46px;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid rgb(255 255 255 / 0.3);
-  border-radius: 0;
-  background: transparent;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
   color: var(--ad-cream);
   font: inherit;
-  font-size: 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.ad-input:hover:not(:disabled),
+.ad-select:hover:not(:disabled),
+.ad-textarea:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 0.3);
 }
 .ad-textarea {
-  min-height: 92px;
-  padding: 10px 0;
+  min-height: 108px;
+  padding: 12px 14px;
   resize: vertical;
   line-height: 1.9;
 }
@@ -660,37 +681,193 @@
   background-position: left 14px top 50%, left 9px top 50%;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
-  padding-inline-end: 26px;
+  padding-inline-end: 38px;
+  cursor: pointer;
 }
 .ad-select option {
   background: #1b1d1a;
   color: var(--ad-cream);
 }
+
+/* ───────── custom select (a themed listbox) ───────── */
+.ad-picker__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--ad-cream);
+  font: inherit;
+  font-size: 15px;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.ad-picker__trigger:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 0.3);
+}
+.ad-picker__trigger:focus-visible {
+  outline: none;
+  border-color: var(--ad-brass);
+  box-shadow: 0 0 0 3px rgb(189 131 64 / 0.16);
+}
+.ad-picker__trigger.is-open {
+  border-color: var(--ad-brass);
+  box-shadow: 0 0 0 3px rgb(189 131 64 / 0.16);
+}
+.ad-picker__trigger[aria-invalid="true"] {
+  border-color: var(--ad-danger);
+}
+.ad-picker__trigger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.ad-picker__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ad-picker__placeholder {
+  color: rgb(241 242 233 / 0.4);
+}
+.ad-picker__chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ad-muted);
+  transition: transform 0.2s, color 0.2s;
+}
+.ad-picker__trigger.is-open .ad-picker__chevron {
+  transform: rotate(180deg);
+  color: var(--ad-brass);
+}
+.ad-picker__menu {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ad-line-strong);
+  border-radius: 10px;
+  background: #1b1d1a;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.55);
+}
+.ad-picker__option {
+  flex: none;
+  padding: 9px 12px;
+  border-radius: 7px;
+  color: var(--ad-cream);
+  font-size: 14px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.ad-picker__option.is-active {
+  background: rgb(189 131 64 / 0.18);
+}
+.ad-picker__option.is-selected {
+  color: var(--ad-brass-hi);
+  font-weight: 700;
+}
+.ad-picker__option.is-selected.is-active {
+  background: rgb(189 131 64 / 0.24);
+}
+.ad-picker__option.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
 .ad-input::placeholder,
 .ad-textarea::placeholder {
-  color: rgb(241 242 233 / 0.28);
+  color: rgb(241 242 233 / 0.3);
 }
 .ad-input:focus,
 .ad-select:focus,
 .ad-textarea:focus {
   outline: none;
-  border-bottom-color: var(--ad-brass);
-  box-shadow: 0 1px 0 0 var(--ad-brass);
+  border-color: var(--ad-brass);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: 0 0 0 3px rgb(189 131 64 / 0.16);
 }
 .ad-input[aria-invalid="true"],
 .ad-select[aria-invalid="true"],
 .ad-textarea[aria-invalid="true"] {
-  border-bottom-color: var(--ad-danger);
+  border-color: var(--ad-danger);
+}
+.ad-input[aria-invalid="true"]:focus,
+.ad-select[aria-invalid="true"]:focus,
+.ad-textarea[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgb(224 122 95 / 0.16);
+}
+.ad-input:disabled,
+.ad-select:disabled,
+.ad-textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 .ad-field__hint {
   margin: 0;
   font-size: 12px;
+  line-height: 1.7;
   color: var(--ad-muted);
 }
 .ad-field__error {
   margin: 0;
   font-size: 12.5px;
+  line-height: 1.7;
   color: #f0907a;
+}
+
+/* ───── field addons & read-only values ───── */
+.ad-input-wrap {
+  position: relative;
+}
+.ad-input--unit {
+  padding-inline-end: 64px;
+}
+.ad-input__unit {
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--ad-muted);
+  pointer-events: none;
+}
+.ad-readonly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px dashed rgb(255 255 255 / 0.2);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.02);
+}
+.ad-readonly__value {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+  color: var(--ad-muted);
+}
+.ad-readonly__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ad-muted);
+}
+.ad-readonly__badge svg {
+  width: 14px;
+  height: 14px;
 }
 
 .ad-form {
@@ -713,6 +890,91 @@
   gap: 16px;
 }
 
+/* ───── sectioned form (the service form) ───── */
+.ad-service-form {
+  display: grid;
+  gap: 18px;
+}
+.ad-form-section {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--ad-line);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.065);
+}
+.ad-form-section__head {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ad-line);
+}
+.ad-form-section__title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ad-cream);
+}
+.ad-form-section__title::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--ad-brass);
+}
+.ad-form-section__desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ad-muted);
+}
+.ad-form-section__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px 18px;
+}
+@media (min-width: 640px) {
+  .ad-form-section__grid--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 700px) {
+  .ad-form-section__grid--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* the two switches of the service form */
+.ad-toggle-grid {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .ad-toggle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ad-toggle-grid .toggle {
+  width: 100%;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--ad-line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.05);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.ad-toggle-grid .toggle:hover {
+  border-color: var(--ad-line-strong);
+}
+.ad-toggle-grid .toggle:has(.toggle__input:checked) {
+  border-color: rgb(189 131 64 / 0.55);
+  background: rgb(189 131 64 / 0.08);
+}
+
 .ad-checkbox {
   display: flex;
   align-items: center;
@@ -732,15 +994,15 @@
   align-items: center;
 }
 .ad-input--password {
-  padding-inline-end: 44px;
+  padding-inline-end: 48px;
 }
 .ad-password__toggle {
   position: absolute;
-  inset-inline-end: 0;
+  inset-inline-end: 6px;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   color: var(--ad-muted);
 }
 .ad-password__toggle:hover {
@@ -886,12 +1148,17 @@
   justify-content: center;
   padding: 20px 16px;
   overflow-y: auto;
-  background: rgb(10 11 9 / 0.7);
+  color-scheme: dark;
+  color: var(--ad-cream);
+  background: rgb(10 11 9 / 0.84);
   backdrop-filter: blur(4px);
 }
 .ad-modal__panel {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 520px;
+  max-height: calc(100svh - 40px);
   margin-block: auto;
   border: 1px solid var(--ad-line);
   background: var(--ad-panel-solid);
@@ -903,16 +1170,28 @@
 }
 .ad-modal__head {
   display: flex;
-  align-items: center;
+  flex: none;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   padding: 16px 18px;
   border-bottom: 1px solid var(--ad-line);
 }
+.ad-modal__heading {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
 .ad-modal__title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
+}
+.ad-modal__description {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ad-muted);
 }
 .ad-modal__close {
   display: grid;
@@ -929,14 +1208,90 @@
   height: 18px;
 }
 .ad-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 20px 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .ad-modal__foot {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
   gap: 10px;
   padding: 16px 18px;
   border-top: 1px solid var(--ad-line);
+  background: var(--ad-panel-solid);
+  box-shadow: 0 -12px 28px rgb(0 0 0 / 0.28);
+}
+
+/* A footer whose actions sit in the middle of the bar (the manual booking). */
+.ad-modal__foot--center {
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 12px;
+}
+.ad-modal__foot--center .ad-btn {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-inline: 22px;
+  white-space: nowrap;
+}
+@media (max-width: 360px) {
+  .ad-modal__foot--center .ad-btn {
+    padding-inline: 14px;
+  }
+}
+
+/* The action bar of the service form: two equal buttons in a rounded tray. */
+.ad-modal__foot--split {
+  position: static;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin: 0 18px 18px;
+  padding: 12px;
+  border: 1px solid var(--ad-line-strong);
+  border-radius: 12px;
+  background: var(--ad-panel-solid);
+  box-shadow: 0 -16px 32px rgb(0 0 0 / 0.32);
+}
+.ad-modal__foot--split .ad-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+  padding-inline: 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* The filled action: the solid orange of the theme (never the danger color). */
+.ad-modal__foot--split .ad-btn--primary {
+  background: var(--ad-brass);
+  border-color: var(--ad-brass);
+  color: #fff;
+  box-shadow: none;
+}
+.ad-modal__foot--split .ad-btn--primary:hover:not(:disabled) {
+  background: var(--ad-brass-hi);
+  border-color: var(--ad-brass-hi);
+}
+.ad-modal__foot--split .ad-btn--primary .ad-btn__spinner {
+  border-color: rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+}
+
+/* The quiet action: a solid dark surface with a light border. */
+.ad-modal__foot--split .ad-btn--ghost {
+  background: #1b1c18;
+  border-color: rgb(255 255 255 / 0.35);
+  color: var(--ad-cream);
+  box-shadow: none;
+}
+.ad-modal__foot--split .ad-btn--ghost:hover:not(:disabled) {
+  background: #26271f;
+  border-color: var(--ad-cream);
 }
 .ad-confirm__message {
   margin: 0;
@@ -1098,60 +1453,13 @@
   gap: 6px;
 }
 
-/* ───────────── switch ───────────── */
+/* ───────────── toggle group (the switch itself lives in src/components/Toggle) ───────────── */
 .ad-switches {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
   padding: 4px 0;
-}
-.ad-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-  color: var(--ad-cream);
-  cursor: pointer;
-  user-select: none;
-}
-.ad-switch input {
-  position: relative;
-  flex: none;
-  width: 48px;
-  height: 26px;
-  margin: 0;
-  appearance: none;
-  background: rgb(255 255 255 / 0.15);
-  border: 1.5px solid rgb(255 255 255 / 0.35);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background-color 0.25s, border-color 0.25s, box-shadow 0.25s;
-}
-.ad-switch input::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.4);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
-  transition: transform 0.25s var(--ease, ease), background-color 0.25s;
-}
-.ad-switch input:checked {
-  background: var(--ad-brass) !important;
-  border-color: var(--ad-brass) !important;
-  box-shadow: 0 0 0 3px rgb(189 131 64 / 0.25) !important;
-}
-.ad-switch input:checked::after {
-  transform: translateX(-22px);
-  background: #fff;
-}
-.ad-switch input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ───────────── tag input ───────────── */
@@ -1161,16 +1469,28 @@
   align-items: center;
   gap: 8px;
   min-height: 46px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgb(255 255 255 / 0.3);
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.ad-tags:hover {
+  border-color: rgb(255 255 255 / 0.3);
+}
+.ad-tags:focus-within {
+  border-color: var(--ad-brass);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: 0 0 0 3px rgb(189 131 64 / 0.16);
 }
 .ad-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border: 1px solid var(--ad-line);
-  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(189 131 64 / 0.35);
+  border-radius: 6px;
+  background: rgb(189 131 64 / 0.12);
   font-size: 13px;
 }
 .ad-tag__remove {
@@ -1186,10 +1506,17 @@
 .ad-tags__input {
   flex: 1;
   min-width: 140px;
-  border-bottom: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
+.ad-tags__input:hover,
 .ad-tags__input:focus {
+  border: 0;
+  background: transparent;
   box-shadow: none;
 }
 
@@ -1221,11 +1548,6 @@
 }
 .ad-weekday:hover {
   border-color: var(--ad-line-strong);
-}
-.ad-weekday input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--ad-brass);
 }
 .ad-weekday:has(input:checked) {
   border-color: rgb(189 131 64 / 0.55);
@@ -1335,7 +1657,7 @@
   gap: 20px;
   padding: 28px 24px;
   border: 1px solid var(--ad-line);
-  background: rgb(22 23 20 / 0.7);
+  background: rgb(22 23 20 / 0.9);
   backdrop-filter: blur(12px);
 }
 .ad-login__brand {
@@ -1373,3 +1695,191 @@
 .jalali-input { display: flex; flex-direction: column; gap: 4px; }
 .jalali-input__hint { font-size: 12.5px; color: var(--ad-brass); }
 .jalali-input__error { font-size: 12.5px; color: #f0907a; }
+
+/* ───────── Jalali calendar (pick a day) ───────── */
+.ad-cal {
+  width: 100%;
+  max-width: 340px;
+  padding: 10px;
+  border: 1px solid var(--ad-line);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.04);
+  user-select: none;
+}
+.ad-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 8px;
+}
+.ad-cal__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ad-cream);
+}
+.ad-cal__nav {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid var(--ad-line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.04);
+  color: var(--ad-cream);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+.ad-cal__nav:hover:not(:disabled) {
+  border-color: var(--ad-brass);
+  color: var(--ad-brass);
+  background: rgb(189 131 64 / 0.1);
+}
+.ad-cal__nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.ad-cal__nav svg {
+  width: 16px;
+  height: 16px;
+}
+.ad-cal__week,
+.ad-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.ad-cal__week {
+  margin-bottom: 4px;
+}
+.ad-cal__weekday {
+  padding: 2px 0;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--ad-muted);
+}
+.ad-cal__day {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ad-cream);
+  font: inherit;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+.ad-cal__day:hover:not(:disabled):not([aria-pressed="true"]) {
+  border-color: var(--ad-line-strong);
+  background: rgb(255 255 255 / 0.08);
+}
+.ad-cal__day:disabled {
+  color: rgb(241 242 233 / 0.22);
+  cursor: not-allowed;
+}
+.ad-cal__day--today {
+  border-color: rgb(189 131 64 / 0.5);
+}
+.ad-cal__day--selected,
+.ad-cal__day[aria-pressed="true"] {
+  border-color: var(--ad-brass);
+  background: var(--ad-brass);
+  color: var(--ad-ink);
+  font-weight: 700;
+}
+.ad-cal__blank {
+  display: block;
+  min-height: 34px;
+}
+
+/* The popover that holds the calendar of a date field. */
+.ad-datepicker__popover {
+  position: fixed;
+  z-index: 90;
+  padding: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ad-line-strong);
+  border-radius: 12px;
+  background: var(--ad-panel-solid);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.55);
+}
+.ad-datepicker__popover .ad-cal {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.ad-datepicker__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ad-muted);
+  transition: color 0.2s;
+}
+.ad-picker__trigger.is-open .ad-datepicker__icon {
+  color: var(--ad-brass);
+}
+
+/* ───────── free hours (a grid of slots) ───────── */
+.ad-slots {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  min-height: 46px;
+}
+.ad-slot {
+  min-width: 68px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--ad-line-strong);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.05);
+  color: var(--ad-cream);
+  font: inherit;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+.ad-slot:hover:not(:disabled):not([aria-pressed="true"]) {
+  border-color: var(--ad-brass);
+  color: var(--ad-brass);
+  background: rgb(189 131 64 / 0.1);
+}
+.ad-slot:disabled {
+  color: rgb(241 242 233 / 0.25);
+  border-color: var(--ad-line);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.ad-slot[aria-pressed="true"] {
+  border-color: var(--ad-brass);
+  background: var(--ad-brass);
+  color: var(--ad-ink);
+  font-weight: 700;
+}
+.ad-slots__empty {
+  margin: 0;
+  align-self: center;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ad-muted);
+}
+
+/* Day + hour of the manual booking sit side by side. */
+.ad-booking-when {
+  display: grid;
+  gap: 16px 22px;
+}
+@media (min-width: 700px) {
+  .ad-booking-when {
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  }
+}

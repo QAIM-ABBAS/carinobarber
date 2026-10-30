@@ -6,10 +6,14 @@ import { CloseIcon } from '../layout/icons'
 export interface ModalProps {
   open: boolean
   title: string
+  /** A short line under the title that explains the task of the dialog. */
+  description?: string
   onClose: () => void
   children: ReactNode
   /** The actions of the footer (the buttons of the form). */
   footer?: ReactNode
+  /** Extra classes for the footer (for example a split action bar). */
+  footerClassName?: string
   /** A wider panel (the forms of the services). */
   wide?: boolean
 }
@@ -21,9 +25,11 @@ export interface ModalProps {
 export default function Modal({
   open,
   title,
+  description,
   onClose,
   children,
   footer,
+  footerClassName,
   wide = false,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
@@ -48,9 +54,12 @@ export default function Modal({
         ref={panelRef}
       >
         <header className="ad-modal__head">
-          <h2 className="ad-modal__title" id={titleId}>
-            {title}
-          </h2>
+          <div className="ad-modal__heading">
+            <h2 className="ad-modal__title" id={titleId}>
+              {title}
+            </h2>
+            {description && <p className="ad-modal__description">{description}</p>}
+          </div>
           <button
             type="button"
             className="ad-modal__close"
@@ -61,7 +70,11 @@ export default function Modal({
           </button>
         </header>
         <div className="ad-modal__body">{children}</div>
-        {footer && <footer className="ad-modal__foot">{footer}</footer>}
+        {footer && (
+          <footer className={`ad-modal__foot ${footerClassName ?? ''}`.trim()}>
+            {footer}
+          </footer>
+        )}
       </div>
     </div>,
     document.body,
