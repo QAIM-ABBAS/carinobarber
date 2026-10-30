@@ -4,7 +4,6 @@ import { readSession } from '../../auth/storage'
 import { ApiError, GENERIC_ERROR_MESSAGE, apiRequest } from '../api/client'
 import type { LoginResponse } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
-import { ScissorsMark } from '../layout/icons'
 
 const ADMIN_HOME = '/admin'
 const LOGIN_PATH = '/admin/login'

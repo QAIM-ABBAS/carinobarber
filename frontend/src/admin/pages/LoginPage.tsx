@@ -2,7 +2,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ApiError, GENERIC_ERROR_MESSAGE } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import { ScissorsMark, EyeIcon, EyeOffIcon } from '../layout/icons'
+import { EyeIcon, EyeOffIcon } from '../layout/icons'
 import Button from '../components/Button'
 import Field from '../components/Field'
 
