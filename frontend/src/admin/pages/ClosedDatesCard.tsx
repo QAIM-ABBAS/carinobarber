@@ -10,6 +10,7 @@ import Skeleton from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { formatJalali, todayISO } from '../lib/format'
 import { TrashIcon } from '../layout/icons'
+import JalaliDateInput from '../components/JalaliDateInput'
 
 /** The holidays of the shop: the days the barbershop does not open. */
 export default function ClosedDatesCard() {
@@ -72,15 +73,10 @@ export default function ClosedDatesCard() {
 
       <form className="ad-closed-add" onSubmit={onSubmit} noValidate>
         <Field label="تاریخ" htmlFor="closed-date">
-          <input
+          <JalaliDateInput
             id="closed-date"
-            className="ad-input"
-            type="date"
             value={date}
-            onChange={(event) => {
-              setDate(event.target.value)
-              setError(null)
-            }}
+            onChange={(iso) => { setDate(iso); setError(null) }}
             aria-invalid={Boolean(error)}
           />
         </Field>
@@ -132,9 +128,6 @@ export default function ClosedDatesCard() {
             >
               <div className="ad-closed-list__text">
                 <span className="ad-closed-list__date">{formatJalali(item.date)}</span>
-                <span className="ad-closed-list__iso" dir="ltr">
-                  {item.date}
-                </span>
                 {item.reason && <span className="ad-closed-list__reason">{item.reason}</span>}
               </div>
               <Button

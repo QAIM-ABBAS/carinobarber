@@ -1,4 +1,4 @@
-import { formatJalali } from '../lib/format'
+import JalaliDateInput from './JalaliDateInput'
 
 export interface BookingFiltersProps {
   dateFrom: string
@@ -14,8 +14,7 @@ export interface BookingFiltersProps {
 }
 
 /**
- * The filter bar of the booking list: a date range (the Gregorian input with the
- * Jalali date next to it), the status and the search field.
+ * The filter bar of the booking list: a Jalali date range, status and search.
  */
 export default function BookingFilters({
   dateFrom,
@@ -34,28 +33,22 @@ export default function BookingFilters({
         <label className="ad-filter__label" htmlFor="filter-from">
           از تاریخ
         </label>
-        <input
+        <JalaliDateInput
           id="filter-from"
-          className="ad-input"
-          type="date"
           value={dateFrom}
-          onChange={(event) => onDateFromChange(event.target.value)}
+          onChange={onDateFromChange}
         />
-        <p className="ad-filter__jalali">{dateFrom ? formatJalali(dateFrom) : 'همهٔ روزها'}</p>
       </div>
 
       <div className="ad-filter">
         <label className="ad-filter__label" htmlFor="filter-to">
           تا تاریخ
         </label>
-        <input
+        <JalaliDateInput
           id="filter-to"
-          className="ad-input"
-          type="date"
           value={dateTo}
-          onChange={(event) => onDateToChange(event.target.value)}
+          onChange={onDateToChange}
         />
-        <p className="ad-filter__jalali">{dateTo ? formatJalali(dateTo) : 'همهٔ روزها'}</p>
       </div>
 
       <div className="ad-filter">

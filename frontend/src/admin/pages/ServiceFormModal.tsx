@@ -11,6 +11,7 @@ import {
   type ServiceFormState,
 } from '../lib/serviceForm'
 import Button from '../components/Button'
+import Toggle from '../components/Toggle'
 import Field from '../components/Field'
 import Modal from '../components/Modal'
 import TagInput from '../components/TagInput'
@@ -102,10 +103,10 @@ export default function ServiceFormModal({ open, service, onClose }: ServiceForm
       wide
       footer={
         <>
-          <Button type="submit" form="service-form" loading={create.isPending || update.isPending}>
+          <Button type="submit" form="service-form" size="sm" loading={create.isPending || update.isPending}>
             {isNew ? 'افزودن خدمت' : 'ذخیرهٔ تغییرات'}
           </Button>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose}>
             انصراف
           </Button>
         </>
@@ -163,64 +164,46 @@ export default function ServiceFormModal({ open, service, onClose }: ServiceForm
           />
         </Field>
 
-        <Field label="قیمت (تومان)" htmlFor="service-price" error={errors.price}>
-          <input
-            id="service-price"
-            className="ad-input"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={form.price}
-            onChange={(event) => patch({ price: event.target.value })}
-            aria-invalid={Boolean(errors.price)}
-          />
-        </Field>
-
-        <Field label="مدت زمان (دقیقه)" htmlFor="service-duration" error={errors.duration}>
-          <input
-            id="service-duration"
-            className="ad-input"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={600}
-            value={form.duration}
-            onChange={(event) => patch({ duration: event.target.value })}
-            aria-invalid={Boolean(errors.duration)}
-          />
-        </Field>
-
-        <Field label="ترتیب نمایش" htmlFor="service-order" error={errors.sort_order}>
-          <input
-            id="service-order"
-            className="ad-input"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={form.sort_order}
-            onChange={(event) => patch({ sort_order: event.target.value })}
-            aria-invalid={Boolean(errors.sort_order)}
-          />
-        </Field>
-
-        <div className="ad-field">
-          <span className="ad-field__label">وضعیت</span>
-          <label className="ad-switch">
+        <div className="ad-form__row">
+          <Field label="قیمت (تومان)" htmlFor="service-price" error={errors.price}>
             <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(event) => patch({ is_active: event.target.checked })}
+              id="service-price"
+              className="ad-input"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={form.price}
+              onChange={(event) => patch({ price: event.target.value })}
+              aria-invalid={Boolean(errors.price)}
             />
-            <span>در سایت نمایش داده شود</span>
-          </label>
-          <label className="ad-switch">
+          </Field>
+
+          <Field label="مدت زمان (دقیقه)" htmlFor="service-duration" error={errors.duration}>
             <input
-              type="checkbox"
-              checked={form.featured}
-              onChange={(event) => patch({ featured: event.target.checked })}
+              id="service-duration"
+              className="ad-input"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={600}
+              value={form.duration}
+              onChange={(event) => patch({ duration: event.target.value })}
+              aria-invalid={Boolean(errors.duration)}
             />
-            <span>خدمت ویژه</span>
-          </label>
+          </Field>
+        </div>
+
+        <div className="ad-switches ad-form__full">
+          <Toggle
+            checked={form.is_active}
+            onChange={(val) => patch({ is_active: val })}
+            label="نمایش در سایت"
+          />
+          <Toggle
+            checked={form.featured}
+            onChange={(val) => patch({ featured: val })}
+            label="خدمت ویژه"
+          />
         </div>
 
         <TagInput

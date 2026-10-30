@@ -9,6 +9,7 @@ import ErrorState from '../components/ErrorState'
 import PageHeader from '../components/PageHeader'
 import { SkeletonTable } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
+import Toggle from '../components/Toggle'
 import { formatNumber, formatToman } from '../lib/format'
 import {
   ArrowDownIcon,
@@ -167,15 +168,12 @@ export default function AdminServicesPage() {
                     )}
                   </td>
                   <td data-label="وضعیت">
-                    <label className="ad-switch">
-                      <input
-                        type="checkbox"
-                        checked={service.is_active}
-                        onChange={() => void toggleActive(service)}
-                        disabled={busy}
-                      />
-                      <span>{service.is_active ? 'فعال' : 'غیرفعال'}</span>
-                    </label>
+                    <Toggle
+                      checked={service.is_active}
+                      onChange={() => void toggleActive(service)}
+                      label={service.is_active ? 'فعال' : 'غیرفعال'}
+                      disabled={busy}
+                    />
                   </td>
                   <td data-label="ترتیب">
                     <div className="ad-actions">

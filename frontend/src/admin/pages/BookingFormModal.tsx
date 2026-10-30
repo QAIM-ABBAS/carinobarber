@@ -13,7 +13,8 @@ import {
   type BookingFormErrors,
   type BookingFormState,
 } from '../lib/bookingForm'
-import { addDays, formatJalali, formatTime, todayISO } from '../lib/format'
+import { addDays, formatTime, todayISO } from '../lib/format'
+import JalaliDateInput from '../components/JalaliDateInput'
 
 export interface BookingFormModalProps {
   open: boolean
@@ -133,15 +134,13 @@ export default function BookingFormModal({ open, onClose, onCreated }: BookingFo
           </select>
         </Field>
 
-        <Field label="تاریخ نوبت" htmlFor="booking-date" error={errors.date} hint={date ? formatJalali(date) : undefined}>
-          <input
+        <Field label="تاریخ نوبت" htmlFor="booking-date" error={errors.date}>
+          <JalaliDateInput
             id="booking-date"
-            className="ad-input"
-            type="date"
+            value={date}
             min={today}
             max={maxDate}
-            value={date}
-            onChange={(event) => update({ date: event.target.value, time: '' })}
+            onChange={(iso) => update({ date: iso, time: '' })}
             aria-invalid={Boolean(errors.date)}
           />
         </Field>
