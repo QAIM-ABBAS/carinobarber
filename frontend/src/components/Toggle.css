@@ -1,0 +1,93 @@
+/*
+ * ───────────────────────── Toggle switch ─────────────────────────
+ * The styles of the one Toggle component used everywhere in the project.
+ * The colors fall back to the shared brand tokens of `index.css`, so the same
+ * component works on the public pages and inside the (dark) admin shell.
+ */
+
+.toggle {
+  --toggle-accent: var(--color-brass, #bd8340);
+  --toggle-ring: rgb(189 131 64 / 0.25);
+  --toggle-track: rgb(255 255 255 / 0.15);
+  --toggle-border: rgb(255 255 255 / 0.35);
+  --toggle-thumb: rgb(255 255 255 / 0.4);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle__input {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 26px;
+  margin: 0;
+  appearance: none;
+  background: var(--toggle-track);
+  border: 1.5px solid var(--toggle-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+
+.toggle__input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--toggle-thumb);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition:
+    transform 0.25s var(--ease, ease),
+    background-color 0.25s;
+}
+
+.toggle__input:checked {
+  background: var(--toggle-accent);
+  border-color: var(--toggle-accent);
+  box-shadow: 0 0 0 3px var(--toggle-ring);
+}
+
+.toggle__input:checked::after {
+  transform: translateX(-22px);
+  background: #fff;
+}
+
+.toggle__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle__label {
+  display: block;
+}
+
+.toggle__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toggle__description {
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgb(241 242 233 / 0.62);
+}
+
+.toggle.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}

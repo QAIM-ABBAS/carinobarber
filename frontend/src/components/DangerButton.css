@@ -1,0 +1,110 @@
+/*
+ * ───────────────────────── Danger button ─────────────────────────
+ * The styles of the one DangerButton component used everywhere in the project.
+ * The red is the shared destructive color; the fallbacks keep it working
+ * outside the admin shell and outside the account page.
+ */
+
+.danger-button {
+  --danger: var(--ad-danger, #e07a5f);
+  --danger-hi: #e8826a;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    box-shadow 0.2s,
+    opacity 0.2s;
+}
+
+.danger-button svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* ───── solid: the filled destructive action ───── */
+.danger-button--solid {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 2px 8px rgb(224 122 95 / 0.35);
+}
+.danger-button--solid:hover:not(:disabled) {
+  background: var(--danger-hi);
+  border-color: var(--danger-hi);
+  box-shadow: 0 4px 12px rgb(224 122 95 / 0.45);
+}
+
+/* ───── outline: the quiet destructive action ───── */
+.danger-button--outline {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgb(224 122 95 / 0.5);
+}
+.danger-button--outline:hover:not(:disabled) {
+  background: rgb(224 122 95 / 0.12);
+  border-color: var(--danger);
+}
+
+.danger-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ───── sizes ───── */
+.danger-button--sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.danger-button--sm svg {
+  width: 15px;
+  height: 15px;
+}
+
+.danger-button--lg {
+  min-height: 54px;
+  padding: 0 28px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.danger-button--block {
+  width: 100%;
+}
+
+/* ───── loading spinner ───── */
+.danger-button__spinner {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+  border-radius: 999px;
+  animation: danger-button-spin 0.7s linear infinite;
+}
+.danger-button--outline .danger-button__spinner {
+  border-color: rgb(224 122 95 / 0.35);
+  border-top-color: var(--danger);
+}
+
+@keyframes danger-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
