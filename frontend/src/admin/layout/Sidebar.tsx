@@ -55,7 +55,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <div className="ad-sidebar__brand">
           <span className="ad-logo" aria-hidden="true">
             <img
-              src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+              src="/logo/logo.jpg"
               alt=""
               width={40}
               height={40}

@@ -77,7 +77,7 @@ export default function AdminSsoPage() {
         <div className="ad-login__brand">
           <span className="ad-logo" aria-hidden="true">
             <img
-              src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+              src="/logo/logo.jpg"
               alt=""
               width={40}
               height={40}
