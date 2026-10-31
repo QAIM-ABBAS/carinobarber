@@ -17,24 +17,24 @@
   border-bottom: 1px solid rgb(255 255 255 / 0.13);
 }
 
+/* The crest sits in a square plaque at the start of the bar. `display: block`
+   (not grid) matters: inside a grid the image's 100% height resolved against an
+   auto-sized track and overflowed the logo box, cropping the crest. */
 .logo {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: #d6d5d2;
-  color: #1b1d1a;
-  transition: transform 0.35s var(--ease), background-color 0.2s;
+  display: block;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #1b1d1a;
+  transition: filter 0.25s;
 }
-.logo:hover { transform: rotate(-8deg) scale(1.06); background: #fff; }
-.logo svg { width: 68%; height: 68%; }
-/* Crest artwork (white square PNG) fills the round badge and is clipped to it. */
+.logo:hover { filter: brightness(1.12) saturate(1.04); }
 .logo__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: inherit;
   display: block;
 }
 
@@ -83,7 +83,7 @@
 .social-link { display: grid; place-items: center; width: 22px; height: 22px; transition: color 0.2s, transform 0.3s var(--ease); }
 .social-link:hover { color: var(--color-brass); transform: translateY(-2px); }
 .social-link svg { width: 100%; height: 100%; }
-.mobile-menu__social .social-link { width: 26px; height: 26px; }
+.mobile-menu__social .social-link { width: 30px; height: 30px; }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-8px); } }
 
 .nav-link {
@@ -122,12 +122,19 @@
     margin-inline: calc(var(--u) * 45);
     padding-top: calc(var(--u) * 3);
   }
-  .logo { width: calc(var(--u) * 28); height: calc(var(--u) * 28); justify-self: start; }
+  /* Almost the full height of the 70u bar — the crest is the one brand mark on
+     the page, so it is allowed to carry real weight instead of being a chip. */
+  .logo {
+    width: calc(var(--u) * 66);
+    height: calc(var(--u) * 66);
+    justify-self: start;
+    align-self: center;
+  }
   .hero__nav { display: block; }
   .hero__nav ul { display: flex; align-items: center; gap: calc(var(--u) * 26); }
   .nav-link { font-size: calc(var(--u) * 17); }
-  .hero__social { display: flex; align-items: center; gap: calc(var(--u) * 17); justify-self: end; }
-  .hero__social .social-link { width: calc(var(--u) * 17); height: calc(var(--u) * 17); }
+  .hero__social { display: flex; align-items: center; gap: calc(var(--u) * 18); justify-self: end; }
+  .hero__social .social-link { width: calc(var(--u) * 24); height: calc(var(--u) * 24); }
   .menu-btn, .mobile-menu { display: none !important; }
 }
 

@@ -16,7 +16,9 @@ const ADMIN_NAV_ITEM = { label: 'پنل مدیریت', href: '/admin/sso' }
  * Resolves `false` when the anchor is missing (then the caller may navigate).
  */
 function scrollToId(id: string) {
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reduce =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
   return new Promise<boolean>((resolve) => {
     let tries = 0
     const attempt = () => {
@@ -86,7 +88,7 @@ export default function Header() {
         <Link to="/" className="logo" aria-label={brand.name}>
           <img
             className="logo__img"
-            src="/logo/Carino%20Barber%20Monochrome%20Crest.png"
+            src="/logo/logo.jpg"
             alt=""
             width={48}
             height={48}
